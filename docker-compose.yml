@@ -1,0 +1,8 @@
+services:
+  app:
+    image: gm-next-img
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - '4321:3000'
