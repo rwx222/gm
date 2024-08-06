@@ -1,4 +1,3 @@
-import Link from 'next/link'
 import { redirect } from 'next/navigation'
 
 import SocialLoginButtons from '@/components/SocialLoginButtons/SocialLoginButtons'
@@ -32,12 +31,6 @@ export default async function Auth() {
       </section>
 
       <SocialLoginButtons />
-
-      <section className='flex flex-row justify-center'>
-        <Link href='/home' prefetch={false} className='btn btn-wide text-lg'>
-          {`Volver`}
-        </Link>
-      </section>
     </main>
   )
 }

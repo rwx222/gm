@@ -1,4 +1,5 @@
 'use client'
+import Link from 'next/link'
 import { initializeApp } from 'firebase/app'
 import {
   GoogleAuthProvider,
@@ -23,7 +24,7 @@ import JsCookie from 'js-cookie'
 
 import deleteCsrfCookieAction from '@/actions/deleteCsrfCookieAction'
 import GoogleIcon from '@/icons/GoogleIcon'
-// import FacebookIcon from '@/icons/FacebookIcon'
+import FacebookIcon from '@/icons/FacebookIcon'
 import firebaseConfig from '@/data/firebaseConfig'
 import getCookie from '@/utils-front/getCookie'
 import {
@@ -139,39 +140,54 @@ function BaseComponent() {
   )
 
   return (
-    <section className='flex justify-center py-8'>
-      <div className='card glass w-11/12 max-w-sm'>
-        <div className='card-body gap-4'>
-          <ProviderButton
-            onClick={makeLoginWithFn('google')}
-            disabled={isAuthenticating}
-          >
-            <GoogleIcon />
-            {`Ingresar con Google`}
-          </ProviderButton>
+    <>
+      <section className='flex justify-center py-8'>
+        <div className='card glass w-11/12 max-w-sm'>
+          <div className='card-body gap-4'>
+            <ProviderButton
+              onClick={makeLoginWithFn('google')}
+              disabled={isAuthenticating}
+            >
+              <GoogleIcon />
+              {`Ingresar con Google`}
+            </ProviderButton>
 
-          {/* <ProviderButton
-            onClick={makeLoginWithFn('facebook')}
-            disabled={isAuthenticating}
-          >
-            <FacebookIcon />
-            {`Ingresar con Facebook`}
-          </ProviderButton> */}
+            <ProviderButton
+              onClick={makeLoginWithFn('facebook')}
+              disabled={isAuthenticating}
+            >
+              <FacebookIcon />
+              {`Ingresar con Facebook`}
+            </ProviderButton>
+          </div>
         </div>
-      </div>
 
-      <ModalDialog
-        id={AUTH_CSRF_ERROR_MODAL_ID}
-        title={`Intenta otra vez`}
-        description={`Algo salió mal. Por favor, recarga la página e intenta iniciar sesión otra vez.`}
-      />
+        <ModalDialog
+          id={AUTH_CSRF_ERROR_MODAL_ID}
+          title={`Intenta otra vez`}
+          description={`Algo salió mal. Por favor, recarga la página e intenta iniciar sesión otra vez.`}
+        />
 
-      <ModalDialog
-        id={AUTH_UNKNOWN_ERROR_MODAL_ID}
-        title={`Error inesperado`}
-        description={`Ha ocurrido un error inesperado. Por favor, recarga la página e intenta iniciar sesión otra vez.`}
-      />
-    </section>
+        <ModalDialog
+          id={AUTH_UNKNOWN_ERROR_MODAL_ID}
+          title={`Error inesperado`}
+          description={`Ha ocurrido un error inesperado. Por favor, recarga la página e intenta iniciar sesión otra vez.`}
+        />
+      </section>
+
+      <section className='flex flex-row justify-center'>
+        <Link
+          href='/home'
+          prefetch={false}
+          disabled={isAuthenticating}
+          className='btn btn-wide text-lg'
+        >
+          {isAuthenticating && <span className='loading loading-spinner' />}
+
+          {`Volver`}
+        </Link>
+      </section>
+    </>
   )
 }
 
@@ -188,7 +204,7 @@ const ProviderButton = ({ children, ...props }) => {
     <button
       {...props}
       type='button'
-      className='flex flex-row items-center py-2 px-5 bg-white hover:bg-gray-200 text-gray-800 text-sm xs:text-base sm:text-lg font-medium shadow-md border border-gray-300 rounded-lg max-w-xs'
+      className='flex flex-row items-center py-2 px-5 bg-white hover:bg-gray-200 text-gray-800 text-sm xs:text-base sm:text-lg font-medium shadow-md border border-gray-300 rounded-lg max-w-xs disabled:opacity-50 disabled:cursor-wait'
     >
       {children}
     </button>

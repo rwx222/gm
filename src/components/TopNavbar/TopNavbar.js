@@ -1,12 +1,10 @@
 import Link from 'next/link'
 import { Suspense } from 'react'
 
-import LoggedUser from '@/components/TopNavbar/LoggedUser/LoggedUser'
+import LoggedUser, {
+  AvatarSkeleton,
+} from '@/components/TopNavbar/LoggedUser/LoggedUser'
 import MenuIcon from '@/icons/MenuIcon'
-
-const AvatarSkeleton = () => {
-  return <div className='skeleton w-12 h-12 rounded-full' />
-}
 
 export default function TopNavbar() {
   return (

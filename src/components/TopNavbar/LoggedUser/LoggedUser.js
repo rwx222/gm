@@ -8,6 +8,10 @@ import CircleUserRoundIcon from '@/icons/CircleUserRoundIcon'
 import { AUTH_PATH } from '@/constants'
 import getUserData from '@/data/getUserData'
 
+export const AvatarSkeleton = () => {
+  return <div className='skeleton w-12 h-12 rounded-full' />
+}
+
 export default async function LoggedUser() {
   const userData = await getUserData()
 
