@@ -2,6 +2,7 @@ import classNames from 'classnames'
 import localFont from 'next/font/local'
 
 import '@/app/globals.css'
+import ClientTasks from '@/components/ClientTasks/ClientTasks'
 
 export const dynamic = 'force-dynamic'
 
@@ -65,6 +66,8 @@ export default function RootLayout({ children }) {
     <html lang='es'>
       <body className={classNames(nextFont.className, 'text-lg')}>
         {children}
+
+        <ClientTasks />
       </body>
     </html>
   )

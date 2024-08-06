@@ -28,6 +28,6 @@ module.exports = {
     prefix: '',
     themeRoot: ':root',
     darkTheme: 'dim',
-    themes: ['emerald', 'dim', 'synthwave'],
+    themes: ['emerald', 'dim', 'cyberpunk'],
   },
 }
