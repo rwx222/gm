@@ -16,7 +16,7 @@ export async function middleware(request) {
 
   if (request.method === 'PUT') {
     const invalidCsrfTokenResponse = NextResponse.json(
-      { code: INVALID_CSRF_ERROR_CODE, message: 'Invalid CSRF token' },
+      { code: INVALID_CSRF_ERROR_CODE, message: INVALID_CSRF_ERROR_CODE },
       { status: 403 }
     )
 

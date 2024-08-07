@@ -1,7 +1,7 @@
 export default function FacebookIcon(props) {
   return (
     <svg
-      className='h-6 w-6 mr-2'
+      className='h-6 w-6'
       xmlns='http://www.w3.org/2000/svg'
       xmlnsXlink='http://www.w3.org/1999/xlink'
       viewBox='0 0 48 48'

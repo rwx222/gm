@@ -31,7 +31,7 @@ export async function PUT(request) {
       return NextResponse.json(
         {
           code: RECENT_SESSION_ERROR_CODE,
-          message: 'Recent sign in required',
+          message: RECENT_SESSION_ERROR_CODE,
         },
         { status: 401 }
       )
@@ -64,7 +64,7 @@ export async function PUT(request) {
     return NextResponse.json(
       {
         code: SERVER_ERROR_CODE,
-        message: 'Internal server error',
+        message: SERVER_ERROR_CODE,
       },
       { status: 500 }
     )
