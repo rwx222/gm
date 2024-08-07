@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@edge-csrf/core": "2.2.2",
+    "@hookform/resolvers": "3.9.0",
     "classnames": "2.5.1",
     "cookie": "0.6.0",
     "firebase": "10.12.5",
@@ -21,7 +22,9 @@
     "ramda-adjunct": "5.0.1",
     "react": "18",
     "react-dom": "18",
-    "theme-change": "2.5.0"
+    "react-hook-form": "7.52.2",
+    "theme-change": "2.5.0",
+    "yup": "1.4.0"
   },
   "devDependencies": {
     "@tailwindcss/typography": "0.5.13",

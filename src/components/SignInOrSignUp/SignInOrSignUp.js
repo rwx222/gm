@@ -22,6 +22,9 @@ import { pick, takeLast } from 'ramda'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 import JsCookie from 'js-cookie'
+import { useForm } from 'react-hook-form'
+import * as yup from 'yup'
+import { yupResolver } from '@hookform/resolvers/yup'
 
 import deleteCsrfCookieAction from '@/actions/deleteCsrfCookieAction'
 import GoogleIcon from '@/icons/GoogleIcon'
@@ -38,10 +41,53 @@ import {
   CSRF_TOKEN_NAME,
   INVALID_CSRF_ERROR_CODE,
   AFTER_LOGIN_PATH,
+  FIELD_EMAIL_MAX_LENGTH,
+  FIELD_NAME_MAX_LENGTH,
+  FIELD_PASSWORD_MIN_LENGTH,
+  FIELD_PASSWORD_MAX_LENGTH,
 } from '@/constants'
 
 const AUTH_CSRF_ERROR_MODAL_ID = 'auth_csrf_error_modal'
 const AUTH_UNKNOWN_ERROR_MODAL_ID = 'auth_unknown_error_modal'
+
+const schemaUp = yup
+  .object({
+    name: yup
+      .string()
+      .trim()
+      .required('Campo requerido')
+      .max(FIELD_NAME_MAX_LENGTH, 'Máximo ${max} caracteres'),
+    email: yup
+      .string()
+      .trim()
+      .lowercase()
+      .required('Campo requerido')
+      .email('Email inválido')
+      .max(FIELD_EMAIL_MAX_LENGTH, 'Máximo ${max} caracteres'),
+    password: yup
+      .string()
+      .required('Campo requerido')
+      .min(FIELD_PASSWORD_MIN_LENGTH, 'Mínimo ${min} caracteres')
+      .max(FIELD_PASSWORD_MAX_LENGTH, 'Máximo ${max} caracteres'),
+  })
+  .required()
+
+const schemaIn = yup
+  .object({
+    email: yup
+      .string()
+      .trim()
+      .lowercase()
+      .required('Campo requerido')
+      .email('Email inválido')
+      .max(FIELD_EMAIL_MAX_LENGTH, 'Máximo ${max} caracteres'),
+    password: yup
+      .string()
+      .required('Campo requerido')
+      .min(FIELD_PASSWORD_MIN_LENGTH, 'Mínimo ${min} caracteres')
+      .max(FIELD_PASSWORD_MAX_LENGTH, 'Máximo ${max} caracteres'),
+  })
+  .required()
 
 function BaseComponent() {
   const searchParams = useSearchParams()
@@ -57,6 +103,18 @@ function BaseComponent() {
   })
   const router = useRouter()
 
+  const {
+    register: registerUp,
+    handleSubmit: handleSubmitUp,
+    formState: { errors: errorsUp },
+  } = useForm({ resolver: yupResolver(schemaUp) })
+
+  const {
+    register: registerIn,
+    handleSubmit: handleSubmitIn,
+    formState: { errors: errorsIn },
+  } = useForm({ resolver: yupResolver(schemaIn) })
+
   useEffect(() => {
     const app = initializeApp(firebaseConfig)
     authRef.current = getAuth(app)
@@ -66,6 +124,16 @@ function BaseComponent() {
 
     googleProviderRef.current = new GoogleAuthProvider()
     facebookProviderRef.current = new FacebookAuthProvider()
+  }, [])
+
+  const goToSignIn = useCallback(() => {
+    setIsSignInTab(true)
+    setShowPasswd(false)
+  }, [])
+
+  const goToSignUp = useCallback(() => {
+    setIsSignInTab(false)
+    setShowPasswd(true)
   }, [])
 
   const makeLoginWithFn = useCallback(
@@ -153,14 +221,12 @@ function BaseComponent() {
     [router]
   )
 
-  const goToSignIn = useCallback(() => {
-    setIsSignInTab(true)
-    setShowPasswd(false)
+  const onSubmitSignUp = useCallback((data) => {
+    console.log(`🚀🚀🚀 -> data UP >>>`, data)
   }, [])
 
-  const goToSignUp = useCallback(() => {
-    setIsSignInTab(false)
-    setShowPasswd(true)
+  const onSubmitSignIn = useCallback((data) => {
+    console.log(`🚀🚀🚀 -> data IN >>>`, data)
   }, [])
 
   const SocialButtons = (
@@ -199,43 +265,77 @@ function BaseComponent() {
           {SocialButtons}
           <div className='divider text-sm'>{`O INGRESAR CON`}</div>
 
-          <label className='mb-5 input input-bordered input-primary flex items-center gap-2'>
-            <EmailIcon width='16' height='16' />
-            <input type='email' className='grow' placeholder='Email' />
-          </label>
+          <form onSubmit={handleSubmitIn(onSubmitSignIn)}>
+            <div className='mb-5'>
+              <label
+                className={classNames(
+                  'input input-bordered flex items-center gap-2',
+                  {
+                    'input-primary': !errorsIn?.email,
+                    'input-error': errorsIn?.email,
+                  }
+                )}
+              >
+                <EmailIcon width='16' height='16' />
+                <input
+                  type='email'
+                  className='grow'
+                  placeholder='Email'
+                  {...registerIn('email')}
+                />
+              </label>
+              {errorsIn?.email && (
+                <ErrorLabel>{errorsIn?.email?.message}</ErrorLabel>
+              )}
+            </div>
 
-          <label className='mb-5 input input-bordered input-primary flex items-center gap-2'>
-            {showPasswd ? (
-              <LockOpenIcon width='16' height='16' />
-            ) : (
-              <LockIcon width='16' height='16' />
-            )}
-            <input
-              type={showPasswd ? 'text' : 'password'}
-              className='grow'
-              placeholder='Contraseña'
-            />
-          </label>
+            <div className='mb-5'>
+              <label
+                className={classNames(
+                  'input input-bordered flex items-center gap-2',
+                  {
+                    'input-primary': !errorsIn?.password,
+                    'input-error': errorsIn?.password,
+                  }
+                )}
+              >
+                {showPasswd ? (
+                  <LockOpenIcon width='16' height='16' />
+                ) : (
+                  <LockIcon width='16' height='16' />
+                )}
+                <input
+                  type={showPasswd ? 'text' : 'password'}
+                  className='grow'
+                  placeholder='Contraseña'
+                  {...registerIn('password')}
+                />
+              </label>
+              {errorsIn?.password && (
+                <ErrorLabel>{errorsIn?.password?.message}</ErrorLabel>
+              )}
+            </div>
 
-          <ShowHidePassword
-            showPasswd={showPasswd}
-            setShowPasswd={setShowPasswd}
-          >
+            <ShowHidePassword
+              showPasswd={showPasswd}
+              setShowPasswd={setShowPasswd}
+            >
+              <button
+                type='button'
+                onClick={goToSignUp}
+                className='underline font-medium text-primary text-sm xs:text-base'
+              >{`No tengo una cuenta`}</button>
+            </ShowHidePassword>
+
             <button
-              type='button'
-              onClick={goToSignUp}
-              className='underline font-medium text-primary text-sm xs:text-base'
-            >{`No tengo una cuenta`}</button>
-          </ShowHidePassword>
-
-          <button
-            type='button'
-            disabled={isAuthenticating}
-            className='btn btn-primary btn-block text-lg'
-          >
-            {isAuthenticating && <span className='loading loading-spinner' />}
-            {`Iniciar sesión`}
-          </button>
+              type='submit'
+              disabled={isAuthenticating}
+              className='btn btn-primary btn-block text-lg'
+            >
+              {isAuthenticating && <span className='loading loading-spinner' />}
+              {`Iniciar sesión`}
+            </button>
+          </form>
         </TabItem>
 
         <TabItem
@@ -251,48 +351,104 @@ function BaseComponent() {
           {SocialButtons}
           <div className='divider text-sm'>{`O CONTINUAR CON`}</div>
 
-          <label className='mb-5 input input-bordered input-secondary flex items-center gap-2'>
-            <IdCardIcon width='16' height='16' />
-            <input type='text' className='grow' placeholder='Nombre completo' />
-          </label>
+          <form onSubmit={handleSubmitUp(onSubmitSignUp)}>
+            <div className='mb-5'>
+              <label
+                className={classNames(
+                  'input input-bordered flex items-center gap-2',
+                  {
+                    'input-secondary': !errorsUp?.name,
+                    'input-error': errorsUp?.name,
+                  }
+                )}
+              >
+                <IdCardIcon width='16' height='16' />
+                <input
+                  type='text'
+                  className='grow'
+                  placeholder='Nombre completo'
+                  {...registerUp('name')}
+                />
+              </label>
+              {errorsUp?.name && (
+                <ErrorLabel>{errorsUp?.name?.message}</ErrorLabel>
+              )}
+            </div>
 
-          <label className='mb-5 input input-bordered input-secondary flex items-center gap-2'>
-            <EmailIcon width='16' height='16' />
-            <input type='email' className='grow' placeholder='Email' />
-          </label>
+            <div className='mb-5'>
+              <label
+                className={classNames(
+                  'input input-bordered flex items-center gap-2',
+                  {
+                    'input-secondary': !errorsUp?.email,
+                    'input-error': errorsUp?.email,
+                  }
+                )}
+              >
+                <EmailIcon width='16' height='16' />
+                <input
+                  type='email'
+                  className='grow'
+                  placeholder='Email'
+                  {...registerUp('email')}
+                />
+              </label>
+              {errorsUp?.email && (
+                <ErrorLabel>{errorsUp?.email?.message}</ErrorLabel>
+              )}
+            </div>
 
-          <label className='mb-5 input input-bordered input-secondary flex items-center gap-2'>
-            {showPasswd ? (
-              <LockOpenIcon width='16' height='16' />
-            ) : (
-              <LockIcon width='16' height='16' />
-            )}
-            <input
-              type={showPasswd ? 'text' : 'password'}
-              className='grow'
-              placeholder='Contraseña'
-            />
-          </label>
+            <div className='mb-5'>
+              <label
+                className={classNames(
+                  'input input-bordered flex items-center gap-2',
+                  {
+                    'input-secondary': !errorsUp?.password,
+                    'input-error': errorsUp?.password,
+                  }
+                )}
+              >
+                {showPasswd ? (
+                  <LockOpenIcon width='16' height='16' />
+                ) : (
+                  <LockIcon width='16' height='16' />
+                )}
+                <input
+                  type={showPasswd ? 'text' : 'password'}
+                  className='grow'
+                  placeholder='Contraseña'
+                  {...registerUp('password', {
+                    minLength: 8,
+                    maxLength: 13,
+                    required: true,
+                  })}
+                />
+              </label>
+              {errorsUp?.password && (
+                <ErrorLabel>{errorsUp?.password?.message}</ErrorLabel>
+              )}
+            </div>
 
-          <ShowHidePassword
-            showPasswd={showPasswd}
-            setShowPasswd={setShowPasswd}
-          >
+            <ShowHidePassword
+              showPasswd={showPasswd}
+              setShowPasswd={setShowPasswd}
+            >
+              <button
+                type='button'
+                onClick={goToSignIn}
+                className='underline font-medium text-secondary text-sm xs:text-base'
+              >{`Ya tengo una cuenta`}</button>
+            </ShowHidePassword>
+
             <button
-              type='button'
-              onClick={goToSignIn}
-              className='underline font-medium text-secondary text-sm xs:text-base'
-            >{`Ya tengo una cuenta`}</button>
-          </ShowHidePassword>
-
-          <button
-            type='button'
-            disabled={isAuthenticating}
-            className='btn btn-secondary btn-block text-lg'
-          >
-            {isAuthenticating && <span className='loading loading-spinner' />}
-            {`Crear cuenta`}
-          </button>
+              type='submit'
+              disabled={isAuthenticating}
+              className='btn btn-secondary btn-block text-lg'
+            >
+              {isAuthenticating && <span className='loading loading-spinner' />}
+              {`Crear cuenta`}
+            </button>
+          </form>
         </TabItem>
       </div>
 
@@ -404,5 +560,11 @@ const ModalDialog = ({ id, title, description }) => {
         </div>
       </div>
     </dialog>
+  )
+}
+
+const ErrorLabel = ({ children }) => {
+  return (
+    <div className='text-error pt-2 px-1 text-sm leading-4'>{children}</div>
   )
 }
