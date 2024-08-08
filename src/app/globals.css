@@ -10,3 +10,9 @@ html {
 *:after {
   box-sizing: inherit;
 }
+
+/* Hide Google reCAPTCHA badge */
+.grecaptcha-badge {
+  z-index: -1000 !important;
+  visibility: hidden !important;
+}

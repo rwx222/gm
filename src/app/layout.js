@@ -1,8 +1,10 @@
 import classNames from 'classnames'
 import localFont from 'next/font/local'
+import Script from 'next/script'
 
 import '@/app/globals.css'
 import ClientTasks from '@/components/ClientTasks/ClientTasks'
+import { RECAPTCHA_SITE_KEY } from '@/constants'
 
 export const dynamic = 'force-dynamic'
 
@@ -68,6 +70,10 @@ export default function RootLayout({ children }) {
         {children}
 
         <ClientTasks />
+
+        <Script
+          src={`https://www.google.com/recaptcha/api.js?render=${RECAPTCHA_SITE_KEY}`}
+        />
       </body>
     </html>
   )

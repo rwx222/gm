@@ -3,7 +3,7 @@ import { NextResponse } from 'next/server'
 import {
   IS_PRODUCTION,
   CSRF_TOKEN_NAME,
-  INVALID_CSRF_ERROR_CODE,
+  ERROR_CODE_INVALID_CSRF,
 } from '@/constants'
 import { generateCsrfToken, verifyCsrfToken } from '@/utils/csrfTokens'
 
@@ -16,7 +16,7 @@ export async function middleware(request) {
 
   if (request.method === 'PUT') {
     const invalidCsrfTokenResponse = NextResponse.json(
-      { code: INVALID_CSRF_ERROR_CODE, message: INVALID_CSRF_ERROR_CODE },
+      { code: ERROR_CODE_INVALID_CSRF, message: ERROR_CODE_INVALID_CSRF },
       { status: 403 }
     )
 

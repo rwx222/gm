@@ -15,8 +15,15 @@ export const FIELD_PASSWORD_MIN_LENGTH = 8
 export const FIELD_PASSWORD_MAX_LENGTH = 128
 
 // custom errors
-export const INVALID_CSRF_ERROR_CODE = 'middleware/invalid-csrf-token'
-export const SERVER_ERROR_CODE = 'server/internal-server-error'
-export const RECENT_SESSION_ERROR_CODE = 'session/recent-sign-in-required'
-export const ACCOUNT_EXISTS_ERROR_CODE =
+export const ERROR_CODE_INVALID_CSRF = 'middleware/invalid-csrf-token'
+export const ERROR_CODE_INTERNAL_SERVER = 'server/internal-server-error'
+export const ERROR_CODE_RECENT_SESSION = 'session/recent-sign-in-required'
+export const ERROR_CODE_ACCOUNT_EXISTS =
   'auth/account-exists-with-different-credential'
+
+// reCAPTCHA
+export const RECAPTCHA_TOKEN_NAME = 'vrcth'
+export const RECAPTCHA_SITE_KEY = process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY
+export const RECAPTCHA_SIGN_IN_ACTION = 'auth/sign_in'
+export const RECAPTCHA_SIGN_UP_ACTION = 'auth/sign_up'
+export const RECAPTCHA_MIN_SCORE = 0.6

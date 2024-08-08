@@ -3,8 +3,8 @@ import cookie from 'cookie'
 
 import {
   IS_PRODUCTION,
-  SERVER_ERROR_CODE,
-  RECENT_SESSION_ERROR_CODE,
+  ERROR_CODE_INTERNAL_SERVER,
+  ERROR_CODE_RECENT_SESSION,
   SESSION_COOKIE_NAME,
 } from '@/constants'
 import { admin } from '@/data/firestore'
@@ -30,8 +30,8 @@ export async function PUT(request) {
     if (sessionElapsedTimeSecs > FIVE_MINS_IN_SECS) {
       return NextResponse.json(
         {
-          code: RECENT_SESSION_ERROR_CODE,
-          message: RECENT_SESSION_ERROR_CODE,
+          code: ERROR_CODE_RECENT_SESSION,
+          message: ERROR_CODE_RECENT_SESSION,
         },
         { status: 401 }
       )
@@ -63,8 +63,8 @@ export async function PUT(request) {
 
     return NextResponse.json(
       {
-        code: SERVER_ERROR_CODE,
-        message: SERVER_ERROR_CODE,
+        code: ERROR_CODE_INTERNAL_SERVER,
+        message: ERROR_CODE_INTERNAL_SERVER,
       },
       { status: 500 }
     )

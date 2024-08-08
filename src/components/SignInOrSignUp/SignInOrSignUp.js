@@ -39,16 +39,21 @@ import firebaseConfig from '@/data/firebaseConfig'
 import getCookie from '@/utils-front/getCookie'
 import {
   CSRF_TOKEN_NAME,
-  INVALID_CSRF_ERROR_CODE,
+  ERROR_CODE_INVALID_CSRF,
   AFTER_LOGIN_PATH,
   FIELD_EMAIL_MAX_LENGTH,
   FIELD_NAME_MAX_LENGTH,
   FIELD_PASSWORD_MIN_LENGTH,
   FIELD_PASSWORD_MAX_LENGTH,
+  RECAPTCHA_SITE_KEY,
+  RECAPTCHA_SIGN_UP_ACTION,
+  RECAPTCHA_TOKEN_NAME,
+  RECAPTCHA_MIN_SCORE,
 } from '@/constants'
 
 const AUTH_CSRF_ERROR_MODAL_ID = 'auth_csrf_error_modal'
 const AUTH_UNKNOWN_ERROR_MODAL_ID = 'auth_unknown_error_modal'
+const AUTH_RECAPTCHA_ERROR_MODAL_ID = 'auth_recaptcha_min_score_error_modal'
 
 const schemaUp = yup
   .object({
@@ -177,7 +182,6 @@ function BaseComponent() {
         const sessionRes = await fetch('/api/session', {
           method: 'PUT',
           headers: {
-            'Content-Type': 'application/json',
             Authorization: `Bearer ${userIdToken}`,
             [CSRF_TOKEN_NAME]: csrfToken,
           },
@@ -198,9 +202,9 @@ function BaseComponent() {
       } catch (error) {
         const errorMsg = error?.message ?? ''
         console.error(error)
-        console.error(`💥 '${errorMsg}'`)
+        console.error(`💥 LW > '${errorMsg}'`)
 
-        if (errorMsg && errorMsg.includes(INVALID_CSRF_ERROR_CODE)) {
+        if (errorMsg && errorMsg.includes(ERROR_CODE_INVALID_CSRF)) {
           JsCookie.remove(CSRF_TOKEN_NAME)
           document.getElementById(AUTH_CSRF_ERROR_MODAL_ID).showModal()
           deleteCsrfCookieAction()
@@ -221,12 +225,67 @@ function BaseComponent() {
     [router]
   )
 
-  const onSubmitSignUp = useCallback((data) => {
-    console.log(`🚀🚀🚀 -> data UP >>>`, data)
-  }, [])
+  const onSubmitSignUp = useCallback(
+    async (data) => {
+      console.log(`🚀🚀🚀 -> data UP >>>`, data) // TODO: -> ltd
+      try {
+        setIsAuthenticating(true)
+        const recaptchaToken = await grecaptcha.execute(RECAPTCHA_SITE_KEY, {
+          action: RECAPTCHA_SIGN_UP_ACTION,
+        })
+        const csrfToken = getCookie(CSRF_TOKEN_NAME)
+        const recaptchaRes = await fetch('/api/validate-rct', {
+          method: 'PUT',
+          headers: {
+            [RECAPTCHA_TOKEN_NAME]: recaptchaToken,
+            [CSRF_TOKEN_NAME]: csrfToken,
+          },
+        })
+        const recaptchaData = await recaptchaRes.json()
+
+        if (!recaptchaRes.ok) {
+          throw new Error(
+            recaptchaData?.code ||
+              recaptchaData?.message ||
+              recaptchaRes.statusText
+          )
+        } else {
+          if (
+            !recaptchaData?.success ||
+            recaptchaData?.score < RECAPTCHA_MIN_SCORE
+          ) {
+            document.getElementById(AUTH_RECAPTCHA_ERROR_MODAL_ID).showModal()
+          }
+          // TODO: -> continuar con la creacion de usuario de firebase
+        }
+      } catch (error) {
+        const errorMsg = error?.message ?? ''
+        console.error(error)
+        console.error(`💥 SSU > '${errorMsg}'`)
+
+        if (errorMsg && errorMsg.includes(ERROR_CODE_INVALID_CSRF)) {
+          JsCookie.remove(CSRF_TOKEN_NAME)
+          document.getElementById(AUTH_CSRF_ERROR_MODAL_ID).showModal()
+          deleteCsrfCookieAction()
+            .then(() => {
+              router.refresh()
+            })
+            .catch((error) => {
+              console.error(error)
+              router.refresh()
+            })
+        } else {
+          document.getElementById(AUTH_UNKNOWN_ERROR_MODAL_ID).showModal()
+        }
+      } finally {
+        setIsAuthenticating(false)
+      }
+    },
+    [router]
+  )
 
   const onSubmitSignIn = useCallback((data) => {
-    console.log(`🚀🚀🚀 -> data IN >>>`, data)
+    console.log(`🚀🚀🚀 -> data IN >>>`, data) // TODO: -> ltd
   }, [])
 
   const SocialButtons = (
@@ -250,7 +309,7 @@ function BaseComponent() {
   )
 
   return (
-    <>
+    <div>
       <div role='tablist' className='tabs tabs-lifted tabs-lg'>
         <TabItem
           title='Ingresar'
@@ -335,6 +394,7 @@ function BaseComponent() {
               {isAuthenticating && <span className='loading loading-spinner' />}
               {`Iniciar sesión`}
             </button>
+            <RecaptchaLabel />
           </form>
         </TabItem>
 
@@ -448,6 +508,7 @@ function BaseComponent() {
               {isAuthenticating && <span className='loading loading-spinner' />}
               {`Crear cuenta`}
             </button>
+            <RecaptchaLabel />
           </form>
         </TabItem>
       </div>
@@ -477,8 +538,14 @@ function BaseComponent() {
           title={`Error inesperado`}
           description={`Ha ocurrido un error inesperado. Por favor, recarga la página e intenta iniciar sesión otra vez.`}
         />
+
+        <ModalDialog
+          id={AUTH_RECAPTCHA_ERROR_MODAL_ID}
+          title={`Error de seguridad`}
+          description={`No pudimos determinar un nivel de seguridad válido para tu ingreso. Por favor, intenta mas tarde.`}
+        />
       </section>
-    </>
+    </div>
   )
 }
 
@@ -566,5 +633,27 @@ const ModalDialog = ({ id, title, description }) => {
 const ErrorLabel = ({ children }) => {
   return (
     <div className='text-error pt-2 px-1 text-sm leading-4'>{children}</div>
+  )
+}
+
+const RecaptchaLabel = () => {
+  return (
+    <div className='text-xs leading-4 pt-2'>
+      {`This site is protected by reCAPTCHA and the Google `}
+      <a
+        target='_blank'
+        href='https://policies.google.com/privacy'
+        className='link'
+      >{`Privacy Policy`}</a>
+      {` and `}
+      <a
+        target='_blank'
+        href='https://policies.google.com/terms'
+        className='link'
+      >
+        {`Terms of Service`}
+      </a>
+      {` apply.`}
+    </div>
   )
 }
