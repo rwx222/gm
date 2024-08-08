@@ -4,9 +4,11 @@ import { initializeApp } from 'firebase/app'
 import {
   GoogleAuthProvider,
   FacebookAuthProvider,
-  signInWithPopup,
   getAuth,
   inMemoryPersistence,
+  signInWithPopup,
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
 } from 'firebase/auth'
 import {
   getFirestore,
@@ -18,14 +20,16 @@ import {
 } from 'firebase/firestore'
 import { useCallback, useEffect, useRef, useState, Suspense } from 'react'
 import { nanoid } from 'nanoid'
+import * as yup from 'yup'
+import { yupResolver } from '@hookform/resolvers/yup'
 import { pick, takeLast } from 'ramda'
+import { isNonEmptyString } from 'ramda-adjunct'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 import JsCookie from 'js-cookie'
 import { useForm } from 'react-hook-form'
-import * as yup from 'yup'
-import { yupResolver } from '@hookform/resolvers/yup'
 
+import normalizeSpaces from '@/utils/normalizeSpaces'
 import deleteCsrfCookieAction from '@/actions/deleteCsrfCookieAction'
 import GoogleIcon from '@/icons/GoogleIcon'
 import FacebookIcon from '@/icons/FacebookIcon'
@@ -38,22 +42,34 @@ import IdCardIcon from '@/icons/IdCardIcon'
 import firebaseConfig from '@/data/firebaseConfig'
 import getCookie from '@/utils-front/getCookie'
 import {
-  CSRF_TOKEN_NAME,
-  ERROR_CODE_INVALID_CSRF,
+  IS_PRODUCTION,
   AFTER_LOGIN_PATH,
+  CSRF_TOKEN_NAME,
+  PROVIDER_ID_GOOGLE,
+  PROVIDER_ID_FACEBOOK,
+  REGEX_USER_PASSWORD,
+  ERROR_CODE_INVALID_CSRF,
+  ERROR_CODE_RECAPTCHA_LOW_SCORE,
+  ERROR_CODE_EMAIL_ALREADY_IN_USE,
+  ERROR_CODE_INVALID_CREDENTIAL,
+  ERROR_CODE_POPUP_CLOSED,
   FIELD_EMAIL_MAX_LENGTH,
   FIELD_NAME_MAX_LENGTH,
   FIELD_PASSWORD_MIN_LENGTH,
   FIELD_PASSWORD_MAX_LENGTH,
   RECAPTCHA_SITE_KEY,
   RECAPTCHA_SIGN_UP_ACTION,
+  RECAPTCHA_SIGN_IN_ACTION,
   RECAPTCHA_TOKEN_NAME,
   RECAPTCHA_MIN_SCORE,
 } from '@/constants'
 
-const AUTH_CSRF_ERROR_MODAL_ID = 'auth_csrf_error_modal'
-const AUTH_UNKNOWN_ERROR_MODAL_ID = 'auth_unknown_error_modal'
-const AUTH_RECAPTCHA_ERROR_MODAL_ID = 'auth_recaptcha_min_score_error_modal'
+const MODAL_ID_AUTH_CSRF_ERROR = 'auth_csrf_error_modal_id'
+const MODAL_ID_AUTH_UNKNOWN_ERROR = 'auth_unknown_error_modal_id'
+const MODAL_ID_AUTH_RECAPTCHA_ERROR = 'auth_recaptcha_min_score_error_modal_id'
+const MODAL_ID_AUTH_EMAIL_ALREADY_IN_USE = 'auth_email_already_in_use_modal_id'
+const MODAL_ID_AUTH_INVALID_CREDENTIAL = 'auth_invalid_credential_modal_id'
+const MODAL_ID_AUTH_POPUP_CLOSED = 'auth_popup_closed_modal_id'
 
 const schemaUp = yup
   .object({
@@ -61,6 +77,7 @@ const schemaUp = yup
       .string()
       .trim()
       .required('Campo requerido')
+      .min(2, 'Mínimo ${min} caracteres')
       .max(FIELD_NAME_MAX_LENGTH, 'Máximo ${max} caracteres'),
     email: yup
       .string()
@@ -73,7 +90,11 @@ const schemaUp = yup
       .string()
       .required('Campo requerido')
       .min(FIELD_PASSWORD_MIN_LENGTH, 'Mínimo ${min} caracteres')
-      .max(FIELD_PASSWORD_MAX_LENGTH, 'Máximo ${max} caracteres'),
+      .max(FIELD_PASSWORD_MAX_LENGTH, 'Máximo ${max} caracteres')
+      .matches(
+        REGEX_USER_PASSWORD,
+        'Debe tener al menos una mayúscula, una minúscula y un número'
+      ),
   })
   .required()
 
@@ -97,15 +118,18 @@ const schemaIn = yup
 function BaseComponent() {
   const searchParams = useSearchParams()
   const urlTab = searchParams.get('tab') ?? ''
+
   const authRef = useRef(null)
   const dbRef = useRef(null)
   const googleProviderRef = useRef(null)
   const facebookProviderRef = useRef(null)
+
   const [isAuthenticating, setIsAuthenticating] = useState(false)
   const [showPasswd, setShowPasswd] = useState(false)
   const [isSignInTab, setIsSignInTab] = useState(() => {
     return urlTab.toLocaleLowerCase() !== 'signup'
   })
+
   const router = useRouter()
 
   const {
@@ -141,157 +165,170 @@ function BaseComponent() {
     setShowPasswd(true)
   }, [])
 
-  const makeLoginWithFn = useCallback(
+  const performLogin = useCallback(
+    async (result, newUserDisplayname = 'Anonymous') => {
+      const userIdToken = await result.user.getIdToken()
+
+      const uid = result.user.uid
+      const userPayload = {
+        username: nanoid(),
+        email: result.user.email,
+        displayName: result.user.displayName || newUserDisplayname,
+        photoURL: result.user.photoURL,
+        phoneNumber: result.user.phoneNumber,
+        createdAt: serverTimestamp(),
+        providerData: result.user.providerData,
+        lastLogin: serverTimestamp(),
+        loginCount: increment(1),
+      }
+
+      const userDocRef = doc(dbRef.current, 'users', uid)
+      const userDocSnap = await getDoc(userDocRef)
+      const userExists = userDocSnap.exists()
+
+      if (userExists) {
+        // if user exists, update only some fields
+        const fieldsToUpdate = pick(
+          ['providerData', 'lastLogin', 'loginCount'],
+          userPayload
+        )
+        await setDoc(userDocRef, fieldsToUpdate, { merge: true })
+      } else {
+        // if user doesn't exist, create it with the whole payload
+        await setDoc(userDocRef, userPayload)
+      }
+      const csrfToken = getCookie(CSRF_TOKEN_NAME)
+
+      const sessionRes = await fetch('/api/session', {
+        method: 'PUT',
+        headers: {
+          [CSRF_TOKEN_NAME]: csrfToken,
+          Authorization: `Bearer ${userIdToken}`,
+        },
+      })
+      const sessionData = await sessionRes.json()
+
+      if (!sessionRes.ok || !sessionData?.uid) {
+        throw new Error(
+          sessionData?.code || sessionData?.message || sessionRes.statusText
+        )
+      }
+
+      const now = new Date()
+      const nowTime = now.getTime()
+      const tid = takeLast(6, `${nowTime}`)
+
+      router.replace(AFTER_LOGIN_PATH + '?tid=' + tid)
+    },
+    [router]
+  )
+
+  const handleErrorMessage = useCallback(
+    (error) => {
+      const errorMsg = isNonEmptyString(error?.message) ? error?.message : ''
+
+      if (errorMsg.includes(ERROR_CODE_INVALID_CSRF)) {
+        JsCookie.remove(CSRF_TOKEN_NAME)
+        document.getElementById(MODAL_ID_AUTH_CSRF_ERROR).showModal()
+        deleteCsrfCookieAction()
+          .then(() => null)
+          .catch((error) => {
+            console.error(error)
+            console.error(`💥> HEM '${error?.message}'`)
+          })
+          .finally(() => {
+            router.refresh()
+          })
+      } else if (errorMsg.includes(ERROR_CODE_RECAPTCHA_LOW_SCORE)) {
+        document.getElementById(MODAL_ID_AUTH_RECAPTCHA_ERROR).showModal()
+      } else if (errorMsg.includes(ERROR_CODE_EMAIL_ALREADY_IN_USE)) {
+        document.getElementById(MODAL_ID_AUTH_EMAIL_ALREADY_IN_USE).showModal()
+      } else if (errorMsg.includes(ERROR_CODE_INVALID_CREDENTIAL)) {
+        document.getElementById(MODAL_ID_AUTH_INVALID_CREDENTIAL).showModal()
+      } else if (errorMsg.includes(ERROR_CODE_POPUP_CLOSED)) {
+        document.getElementById(MODAL_ID_AUTH_POPUP_CLOSED).showModal()
+      } else {
+        document.getElementById(MODAL_ID_AUTH_UNKNOWN_ERROR).showModal()
+      }
+    },
+    [router]
+  )
+
+  const makeLoginWithProviderFn = useCallback(
     (provider) => async () => {
       try {
         setIsAuthenticating(true)
         const result = await signInWithPopup(
           authRef.current,
-          provider === 'facebook'
+          provider === PROVIDER_ID_FACEBOOK
             ? facebookProviderRef.current
             : googleProviderRef.current
         )
-        const uid = result.user.uid
-        const userPayload = {
-          username: nanoid(),
-          email: result.user.email,
-          displayName: result.user.displayName,
-          photoURL: result.user.photoURL,
-          phoneNumber: result.user.phoneNumber,
-          providerData: result.user.providerData,
-          createdAt: serverTimestamp(),
-          lastLogin: serverTimestamp(),
-          loginCount: increment(1),
-        }
-        const userDocRef = doc(dbRef.current, 'users', uid)
-        const userDocSnap = await getDoc(userDocRef)
-        const userExists = userDocSnap.exists()
-
-        if (userExists) {
-          const fieldsToUpdate = pick(
-            ['photoURL', 'providerData', 'lastLogin', 'loginCount'],
-            userPayload
-          )
-          await setDoc(userDocRef, fieldsToUpdate, { merge: true })
-        } else {
-          await setDoc(userDocRef, userPayload)
-        }
-        const userIdToken = await result.user.getIdToken()
-        const csrfToken = getCookie(CSRF_TOKEN_NAME)
-
-        const sessionRes = await fetch('/api/session', {
-          method: 'PUT',
-          headers: {
-            Authorization: `Bearer ${userIdToken}`,
-            [CSRF_TOKEN_NAME]: csrfToken,
-          },
-        })
-        const sessionData = await sessionRes.json()
-
-        if (!sessionRes.ok || !sessionData?.uid) {
-          throw new Error(
-            sessionData?.code || sessionData?.message || sessionRes.statusText
-          )
-        } else {
-          const now = new Date()
-          const nowTime = now.getTime()
-          const tid = takeLast(6, `${nowTime}`)
-
-          router.replace(AFTER_LOGIN_PATH + '?tid=' + tid)
-        }
+        await performLogin(result)
       } catch (error) {
-        const errorMsg = error?.message ?? ''
         console.error(error)
-        console.error(`💥 LW > '${errorMsg}'`)
-
-        if (errorMsg && errorMsg.includes(ERROR_CODE_INVALID_CSRF)) {
-          JsCookie.remove(CSRF_TOKEN_NAME)
-          document.getElementById(AUTH_CSRF_ERROR_MODAL_ID).showModal()
-          deleteCsrfCookieAction()
-            .then(() => {
-              router.refresh()
-            })
-            .catch((error) => {
-              console.error(error)
-              router.refresh()
-            })
-        } else {
-          document.getElementById(AUTH_UNKNOWN_ERROR_MODAL_ID).showModal()
-        }
+        console.error(`💥> LWP '${error?.message}'`)
+        handleErrorMessage(error)
       } finally {
         setIsAuthenticating(false)
       }
     },
-    [router]
+    [handleErrorMessage, performLogin]
+  )
+
+  const onSubmitSignIn = useCallback(
+    async (formData) => {
+      try {
+        setIsAuthenticating(true)
+
+        await validateRecaptcha(RECAPTCHA_SIGN_IN_ACTION)
+
+        const result = await signInWithEmailAndPassword(
+          authRef.current,
+          formData.email,
+          formData.password
+        )
+        await performLogin(result)
+      } catch (error) {
+        console.error(error)
+        console.error(`💥> SSI '${error?.message}'`)
+        handleErrorMessage(error)
+      } finally {
+        setIsAuthenticating(false)
+      }
+    },
+    [handleErrorMessage, performLogin]
   )
 
   const onSubmitSignUp = useCallback(
-    async (data) => {
-      console.log(`🚀🚀🚀 -> data UP >>>`, data) // TODO: -> ltd
+    async (formData) => {
       try {
         setIsAuthenticating(true)
-        const recaptchaToken = await grecaptcha.execute(RECAPTCHA_SITE_KEY, {
-          action: RECAPTCHA_SIGN_UP_ACTION,
-        })
-        const csrfToken = getCookie(CSRF_TOKEN_NAME)
-        const recaptchaRes = await fetch('/api/validate-rct', {
-          method: 'PUT',
-          headers: {
-            [RECAPTCHA_TOKEN_NAME]: recaptchaToken,
-            [CSRF_TOKEN_NAME]: csrfToken,
-          },
-        })
-        const recaptchaData = await recaptchaRes.json()
 
-        if (!recaptchaRes.ok) {
-          throw new Error(
-            recaptchaData?.code ||
-              recaptchaData?.message ||
-              recaptchaRes.statusText
-          )
-        } else {
-          if (
-            !recaptchaData?.success ||
-            recaptchaData?.score < RECAPTCHA_MIN_SCORE
-          ) {
-            document.getElementById(AUTH_RECAPTCHA_ERROR_MODAL_ID).showModal()
-          }
-          // TODO: -> continuar con la creacion de usuario de firebase
-        }
+        await validateRecaptcha(RECAPTCHA_SIGN_UP_ACTION)
+
+        const cleanedDisplayName = normalizeSpaces(formData.name)
+        const result = await createUserWithEmailAndPassword(
+          authRef.current,
+          formData.email,
+          formData.password
+        )
+        await performLogin(result, cleanedDisplayName)
       } catch (error) {
-        const errorMsg = error?.message ?? ''
         console.error(error)
-        console.error(`💥 SSU > '${errorMsg}'`)
-
-        if (errorMsg && errorMsg.includes(ERROR_CODE_INVALID_CSRF)) {
-          JsCookie.remove(CSRF_TOKEN_NAME)
-          document.getElementById(AUTH_CSRF_ERROR_MODAL_ID).showModal()
-          deleteCsrfCookieAction()
-            .then(() => {
-              router.refresh()
-            })
-            .catch((error) => {
-              console.error(error)
-              router.refresh()
-            })
-        } else {
-          document.getElementById(AUTH_UNKNOWN_ERROR_MODAL_ID).showModal()
-        }
+        console.error(`💥> SSU '${error?.message}'`)
+        handleErrorMessage(error)
       } finally {
         setIsAuthenticating(false)
       }
     },
-    [router]
+    [handleErrorMessage, performLogin]
   )
-
-  const onSubmitSignIn = useCallback((data) => {
-    console.log(`🚀🚀🚀 -> data IN >>>`, data) // TODO: -> ltd
-  }, [])
 
   const SocialButtons = (
     <div className='pt-4 flex justify-center gap-5'>
       <ProviderButton
-        onClick={makeLoginWithFn('google')}
+        onClick={makeLoginWithProviderFn(PROVIDER_ID_GOOGLE)}
         disabled={isAuthenticating}
       >
         <GoogleIcon />
@@ -299,7 +336,7 @@ function BaseComponent() {
       </ProviderButton>
 
       <ProviderButton
-        onClick={makeLoginWithFn('facebook')}
+        onClick={makeLoginWithProviderFn(PROVIDER_ID_FACEBOOK)}
         disabled={isAuthenticating}
       >
         <FacebookIcon />
@@ -382,6 +419,7 @@ function BaseComponent() {
               <button
                 type='button'
                 onClick={goToSignUp}
+                disabled={isAuthenticating}
                 className='underline font-medium text-primary text-sm xs:text-base'
               >{`No tengo una cuenta`}</button>
             </ShowHidePassword>
@@ -496,6 +534,7 @@ function BaseComponent() {
               <button
                 type='button'
                 onClick={goToSignIn}
+                disabled={isAuthenticating}
                 className='underline font-medium text-secondary text-sm xs:text-base'
               >{`Ya tengo una cuenta`}</button>
             </ShowHidePassword>
@@ -526,25 +565,7 @@ function BaseComponent() {
         </Link>
       </section>
 
-      <section>
-        <ModalDialog
-          id={AUTH_CSRF_ERROR_MODAL_ID}
-          title={`Intenta otra vez`}
-          description={`Algo salió mal. Por favor, recarga la página e intenta iniciar sesión otra vez.`}
-        />
-
-        <ModalDialog
-          id={AUTH_UNKNOWN_ERROR_MODAL_ID}
-          title={`Error inesperado`}
-          description={`Ha ocurrido un error inesperado. Por favor, recarga la página e intenta iniciar sesión otra vez.`}
-        />
-
-        <ModalDialog
-          id={AUTH_RECAPTCHA_ERROR_MODAL_ID}
-          title={`Error de seguridad`}
-          description={`No pudimos determinar un nivel de seguridad válido para tu ingreso. Por favor, intenta mas tarde.`}
-        />
-      </section>
+      <ErrorModalsSection />
     </div>
   )
 }
@@ -554,6 +575,94 @@ export default function SignInOrSignUp(props) {
     <Suspense>
       <BaseComponent {...props} />
     </Suspense>
+  )
+}
+
+const validateRecaptcha = async (action = 'nameless') => {
+  // recaptcha validation only on production
+  if (IS_PRODUCTION) {
+    const recaptchaToken = await grecaptcha.execute(RECAPTCHA_SITE_KEY, {
+      action,
+    })
+    const csrfToken = getCookie(CSRF_TOKEN_NAME)
+    const recaptchaRes = await fetch('/api/validate-rct', {
+      method: 'PUT',
+      headers: {
+        [CSRF_TOKEN_NAME]: csrfToken,
+        [RECAPTCHA_TOKEN_NAME]: recaptchaToken,
+      },
+    })
+    const recaptchaData = await recaptchaRes.json()
+
+    if (!recaptchaRes.ok) {
+      throw new Error(
+        recaptchaData?.code || recaptchaData?.message || recaptchaRes.statusText
+      )
+    }
+
+    if (!recaptchaData?.success || recaptchaData?.score < RECAPTCHA_MIN_SCORE) {
+      throw new Error(ERROR_CODE_RECAPTCHA_LOW_SCORE)
+    }
+  }
+}
+
+const ErrorModalsSection = () => {
+  return (
+    <section>
+      <ErrorModalDialog
+        id={MODAL_ID_AUTH_POPUP_CLOSED}
+        title={`Ingreso Interrumpido`}
+        description={`Se interrumpió el proceso de ingreso antes de completarlo. Por favor, intenta otra vez.`}
+      />
+
+      <ErrorModalDialog
+        id={MODAL_ID_AUTH_INVALID_CREDENTIAL}
+        title={`Email/Contraseña Incorrectos`}
+        description={`El email o contraseña son incorrectos. Por favor, revisa los campos e intenta otra vez.`}
+      />
+
+      <ErrorModalDialog
+        id={MODAL_ID_AUTH_EMAIL_ALREADY_IN_USE}
+        title={`Ya Tienes una cuenta`}
+        description={`Ya existe una cuenta con este email. Puedes iniciar sesión, o intentar con otro email.`}
+      />
+
+      <ErrorModalDialog
+        id={MODAL_ID_AUTH_CSRF_ERROR}
+        title={`Intenta Otra Vez`}
+        description={`Por seguridad y debido a inactividad no se realizó la acción. Por favor, intenta otra vez.`}
+      />
+
+      <ErrorModalDialog
+        id={MODAL_ID_AUTH_RECAPTCHA_ERROR}
+        title={`Error De Seguridad`}
+        description={`No pudimos determinar un nivel de seguridad válido. Por favor, intenta mas tarde.`}
+      />
+
+      <ErrorModalDialog
+        id={MODAL_ID_AUTH_UNKNOWN_ERROR}
+        title={`Error Inesperado`}
+        description={`Ha ocurrido un error inesperado. Por favor, recarga la página e intenta otra vez.`}
+      />
+    </section>
+  )
+}
+
+const ErrorModalDialog = ({ id, title, description }) => {
+  return (
+    <dialog id={id} className='modal modal-bottom sm:modal-middle'>
+      <div className='modal-box'>
+        <h3 className='font-bold text-lg'>{title}</h3>
+        <p className='py-4'>{description}</p>
+        <div className='modal-action'>
+          <form method='dialog'>
+            <button type='submit' className='btn'>
+              {`Cerrar`}
+            </button>
+          </form>
+        </div>
+      </div>
+    </dialog>
   )
 }
 
@@ -609,24 +718,6 @@ const ProviderButton = ({ children, ...props }) => {
     >
       {children}
     </button>
-  )
-}
-
-const ModalDialog = ({ id, title, description }) => {
-  return (
-    <dialog id={id} className='modal modal-bottom sm:modal-middle'>
-      <div className='modal-box'>
-        <h3 className='font-bold text-lg'>{title}</h3>
-        <p className='py-4'>{description}</p>
-        <div className='modal-action'>
-          <form method='dialog'>
-            <button type='submit' className='btn'>
-              {`Cerrar`}
-            </button>
-          </form>
-        </div>
-      </div>
-    </dialog>
   )
 }
 
