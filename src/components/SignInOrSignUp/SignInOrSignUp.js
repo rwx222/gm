@@ -44,10 +44,14 @@ import MailCheckIcon from '@/icons/MailCheckIcon'
 import BadgeCheckIcon from '@/icons/BadgeCheckIcon'
 import firebaseConfig from '@/data/firebaseConfig'
 import getCookie from '@/utils-front/getCookie'
+import validateRecaptcha from '@/utils-front/validateRecaptcha'
+import BasicModalDialog from '@/ui/BasicModalDialog'
+import RecaptchaPolicyLabel from '@/ui/RecaptchaPolicyLabel'
+import FieldErrorLabel from '@/ui/FieldErrorLabel'
 import {
-  IS_PRODUCTION,
   PATH_HOME,
   PATH_AUTH,
+  PATH_FORGOT_PASSWORD,
   CSRF_TOKEN_NAME,
   PROVIDER_ID_GOOGLE,
   PROVIDER_ID_FACEBOOK,
@@ -62,12 +66,9 @@ import {
   FIELD_NAME_MAX_LENGTH,
   FIELD_PASSWORD_MIN_LENGTH,
   FIELD_PASSWORD_MAX_LENGTH,
-  RECAPTCHA_SITE_KEY,
   RECAPTCHA_SOCIAL_SIGN_IN_ACTION,
   RECAPTCHA_SIGN_UP_ACTION,
   RECAPTCHA_SIGN_IN_ACTION,
-  RECAPTCHA_TOKEN_NAME,
-  RECAPTCHA_MIN_SCORE,
 } from '@/constants'
 
 const MODAL_ID_CSRF_ERROR = 'auth_csrf_error_modal_id'
@@ -126,6 +127,7 @@ const schemaIn = yup
 function BaseComponent() {
   const searchParams = useSearchParams()
   const urlTab = searchParams.get('tab') ?? ''
+  const urlEmail = searchParams.get('email') ?? ''
 
   const authRef = useRef(null)
   const dbRef = useRef(null)
@@ -208,7 +210,8 @@ function BaseComponent() {
 
       if (!result.user.emailVerified) {
         await sendEmailVerification(result.user, {
-          url: window.location.origin + PATH_AUTH,
+          url:
+            window.location.origin + PATH_AUTH + '?email=' + result.user.email,
         })
 
         resetSignUp()
@@ -373,7 +376,7 @@ function BaseComponent() {
   )
 
   return (
-    <div>
+    <div className='md:pt-20'>
       <div role='tablist' className='tabs tabs-lifted tabs-lg'>
         <TabItem
           title='Ingresar'
@@ -404,11 +407,12 @@ function BaseComponent() {
                   type='email'
                   className='grow'
                   placeholder='Email'
+                  defaultValue={urlEmail}
                   {...registerIn('email')}
                 />
               </label>
               {errorsIn?.email && (
-                <ErrorLabel>{errorsIn?.email?.message}</ErrorLabel>
+                <FieldErrorLabel>{errorsIn?.email?.message}</FieldErrorLabel>
               )}
             </div>
 
@@ -435,7 +439,7 @@ function BaseComponent() {
                 />
               </label>
               {errorsIn?.password && (
-                <ErrorLabel>{errorsIn?.password?.message}</ErrorLabel>
+                <FieldErrorLabel>{errorsIn?.password?.message}</FieldErrorLabel>
               )}
             </div>
 
@@ -447,7 +451,7 @@ function BaseComponent() {
                 type='button'
                 onClick={goToSignUp}
                 disabled={isAuthenticating}
-                className='underline font-medium text-primary text-sm xs:text-base'
+                className='underline font-normal text-primary text-sm xs:text-base'
               >{`No tengo una cuenta`}</button>
             </ShowHidePassword>
 
@@ -459,7 +463,17 @@ function BaseComponent() {
               {isAuthenticating && <span className='loading loading-spinner' />}
               {`Iniciar sesión`}
             </button>
-            <RecaptchaLabel />
+
+            <div className='text-center pt-5'>
+              <Link
+                href={PATH_FORGOT_PASSWORD}
+                className='underline font-normal text-primary text-sm xs:text-base'
+              >
+                {`Olvidé mi contraseña`}
+              </Link>
+            </div>
+
+            <RecaptchaPolicyLabel />
           </form>
         </TabItem>
 
@@ -496,7 +510,7 @@ function BaseComponent() {
                 />
               </label>
               {errorsUp?.name && (
-                <ErrorLabel>{errorsUp?.name?.message}</ErrorLabel>
+                <FieldErrorLabel>{errorsUp?.name?.message}</FieldErrorLabel>
               )}
             </div>
 
@@ -519,7 +533,7 @@ function BaseComponent() {
                 />
               </label>
               {errorsUp?.email && (
-                <ErrorLabel>{errorsUp?.email?.message}</ErrorLabel>
+                <FieldErrorLabel>{errorsUp?.email?.message}</FieldErrorLabel>
               )}
             </div>
 
@@ -550,7 +564,7 @@ function BaseComponent() {
                 />
               </label>
               {errorsUp?.password && (
-                <ErrorLabel>{errorsUp?.password?.message}</ErrorLabel>
+                <FieldErrorLabel>{errorsUp?.password?.message}</FieldErrorLabel>
               )}
             </div>
 
@@ -562,7 +576,7 @@ function BaseComponent() {
                 type='button'
                 onClick={goToSignIn}
                 disabled={isAuthenticating}
-                className='underline font-medium text-secondary text-sm xs:text-base'
+                className='underline font-normal text-secondary text-sm xs:text-base'
               >{`Ya tengo una cuenta`}</button>
             </ShowHidePassword>
 
@@ -574,7 +588,7 @@ function BaseComponent() {
               {isAuthenticating && <span className='loading loading-spinner' />}
               {`Crear cuenta`}
             </button>
-            <RecaptchaLabel />
+            <RecaptchaPolicyLabel />
           </form>
         </TabItem>
       </div>
@@ -605,38 +619,10 @@ export default function SignInOrSignUp(props) {
   )
 }
 
-const validateRecaptcha = async (action = 'nameless') => {
-  // recaptcha validation only on production
-  if (IS_PRODUCTION) {
-    const recaptchaToken = await grecaptcha.execute(RECAPTCHA_SITE_KEY, {
-      action,
-    })
-    const csrfToken = getCookie(CSRF_TOKEN_NAME)
-    const recaptchaRes = await fetch('/api/validate-rct', {
-      method: 'PUT',
-      headers: {
-        [CSRF_TOKEN_NAME]: csrfToken,
-        [RECAPTCHA_TOKEN_NAME]: recaptchaToken,
-      },
-    })
-    const recaptchaData = await recaptchaRes.json()
-
-    if (!recaptchaRes.ok) {
-      throw new Error(
-        recaptchaData?.code || recaptchaData?.message || recaptchaRes.statusText
-      )
-    }
-
-    if (!recaptchaData?.success || recaptchaData?.score < RECAPTCHA_MIN_SCORE) {
-      throw new Error(ERROR_CODE_RECAPTCHA_LOW_SCORE)
-    }
-  }
-}
-
 const ErrorModalsSection = () => {
   return (
     <section>
-      <ModalDialog
+      <BasicModalDialog
         id={MODAL_ID_VERIFY_EMAIL}
         title={<div className='text-success'>{`Verifica Tu Email`}</div>}
         description={
@@ -658,66 +644,48 @@ const ErrorModalsSection = () => {
         }
       />
 
-      <ModalDialog
+      <BasicModalDialog
         id={MODAL_ID_TOO_MANY_REQUESTS}
-        title={`Muchos Intentos De Ingreso`}
-        description={`Cuidado, estas haciendo demasiados intentos de ingreso fallidos. Por favor, intenta mas tarde.`}
+        title={`Muchos Intentos`}
+        description={`Cuidado, estas haciendo demasiados intentos en poco tiempo. Por favor, intenta mas tarde.`}
       />
 
-      <ModalDialog
+      <BasicModalDialog
         id={MODAL_ID_POPUP_CLOSED}
         title={`Ingreso Interrumpido`}
         description={`Se interrumpió el proceso de ingreso antes de completarlo. Por favor, intenta otra vez.`}
       />
 
-      <ModalDialog
+      <BasicModalDialog
         id={MODAL_ID_INVALID_CREDENTIAL}
         title={`Email/Contraseña Incorrectos`}
         description={`El email o contraseña son incorrectos. Por favor, revisa los campos e intenta otra vez.`}
       />
 
-      <ModalDialog
+      <BasicModalDialog
         id={MODAL_ID_EMAIL_ALREADY_IN_USE}
         title={`Ya Tienes una cuenta`}
         description={`Ya existe una cuenta con este email. Puedes iniciar sesión, o intentar con otro email.`}
       />
 
-      <ModalDialog
+      <BasicModalDialog
         id={MODAL_ID_CSRF_ERROR}
         title={`Intenta Otra Vez`}
         description={`Por seguridad y debido a inactividad no se realizó la acción. Por favor, intenta otra vez.`}
       />
 
-      <ModalDialog
+      <BasicModalDialog
         id={MODAL_ID_RECAPTCHA_ERROR}
         title={`Error De Seguridad`}
         description={`No pudimos determinar un nivel de seguridad válido. Por favor, intenta mas tarde.`}
       />
 
-      <ModalDialog
+      <BasicModalDialog
         id={MODAL_ID_UNKNOWN_ERROR}
         title={`Error Inesperado`}
         description={`Ha ocurrido un error inesperado. Por favor, recarga la página e intenta otra vez.`}
       />
     </section>
-  )
-}
-
-const ModalDialog = ({ id, title, description }) => {
-  return (
-    <dialog id={id} className='modal modal-bottom sm:modal-middle'>
-      <div className='modal-box'>
-        <h3 className='font-bold text-lg'>{title}</h3>
-        <div className='py-4'>{description}</div>
-        <div className='modal-action'>
-          <form method='dialog'>
-            <button type='submit' className='btn'>
-              {`Cerrar`}
-            </button>
-          </form>
-        </div>
-      </div>
-    </dialog>
   )
 }
 
@@ -773,33 +741,5 @@ const ProviderButton = ({ children, ...props }) => {
     >
       {children}
     </button>
-  )
-}
-
-const ErrorLabel = ({ children }) => {
-  return (
-    <div className='text-error pt-2 px-1 text-sm leading-4'>{children}</div>
-  )
-}
-
-const RecaptchaLabel = () => {
-  return (
-    <div className='text-xs leading-4 pt-2'>
-      {`This site is protected by reCAPTCHA and the Google `}
-      <a
-        target='_blank'
-        href='https://policies.google.com/privacy'
-        className='link'
-      >{`Privacy Policy`}</a>
-      {` and `}
-      <a
-        target='_blank'
-        href='https://policies.google.com/terms'
-        className='link'
-      >
-        {`Terms of Service`}
-      </a>
-      {` apply.`}
-    </div>
   )
 }

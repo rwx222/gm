@@ -9,6 +9,7 @@ export const REGEX_USER_PASSWORD = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).+$/
 // routes
 export const PATH_AUTH = '/auth'
 export const PATH_HOME = '/home'
+export const PATH_FORGOT_PASSWORD = '/forgot-password'
 export const PATH_CHANGE_THEME = '/home/change-theme'
 
 // form fields
@@ -32,9 +33,10 @@ export const ERROR_CODE_TOO_MANY_REQUESTS = 'auth/too-many-requests'
 export const ERROR_CODE_RECAPTCHA_LOW_SCORE = 'auth/recaptcha-low-score'
 export const RECAPTCHA_TOKEN_NAME = 'vrcth'
 export const RECAPTCHA_SITE_KEY = process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY
-export const RECAPTCHA_SOCIAL_SIGN_IN_ACTION = 'auth/social_sign_in'
-export const RECAPTCHA_SIGN_IN_ACTION = 'auth/sign_in'
-export const RECAPTCHA_SIGN_UP_ACTION = 'auth/sign_up'
+export const RECAPTCHA_SOCIAL_SIGN_IN_ACTION = 'auth_social_sign_in'
+export const RECAPTCHA_SIGN_IN_ACTION = 'auth_sign_in'
+export const RECAPTCHA_SIGN_UP_ACTION = 'auth_sign_up'
+export const RECAPTCHA_FORGOT_PASSWORD = 'auth_forgot_password'
 export const RECAPTCHA_MIN_SCORE = 0.6
 
 // firebase auth providers ids
