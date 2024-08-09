@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { Suspense } from 'react'
 
+import { PATH_HOME } from '@/constants'
 import LoggedUser, {
   AvatarSkeleton,
 } from '@/components/TopNavbar/LoggedUser/LoggedUser'
@@ -20,7 +21,7 @@ export default function TopNavbar() {
 
       <div className='flex-1'>
         <Link
-          href='/home'
+          href={PATH_HOME}
           className='text-lg xs:text-xl sm:text-2xl ml-2 xs:ml-3 font-medium'
         >
           {`GameMaster`}

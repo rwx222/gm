@@ -2,7 +2,7 @@ import { redirect } from 'next/navigation'
 
 import ChangeThemeOptions from '@/components/ChangeThemeOptions/ChangeThemeOptions'
 import getUserUid from '@/data/getUserUid'
-import { AUTH_PATH } from '@/constants'
+import { PATH_AUTH } from '@/constants'
 
 export const dynamic = 'force-dynamic'
 
@@ -15,7 +15,7 @@ export default async function ChangeTheme() {
 
   if (!uid) {
     // the user is not logged in
-    redirect(AUTH_PATH)
+    redirect(PATH_AUTH)
   }
 
   return (

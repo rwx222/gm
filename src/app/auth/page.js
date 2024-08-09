@@ -1,7 +1,7 @@
 import { redirect } from 'next/navigation'
 
 import SignInOrSignUp from '@/components/SignInOrSignUp/SignInOrSignUp'
-import { AFTER_LOGIN_PATH } from '@/constants'
+import { PATH_HOME } from '@/constants'
 import getUserUid from '@/data/getUserUid'
 
 export const dynamic = 'force-dynamic'
@@ -16,7 +16,7 @@ export default async function Auth() {
 
   if (uid) {
     // the user is already logged in
-    redirect(AFTER_LOGIN_PATH)
+    redirect(PATH_HOME)
   }
 
   return (

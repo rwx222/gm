@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 
 import {
+  PATH_HOME,
   IS_PRODUCTION,
   CSRF_TOKEN_NAME,
   ERROR_CODE_INVALID_CSRF,
@@ -11,7 +12,7 @@ export async function middleware(request) {
   const responseNext = NextResponse.next()
 
   if (request.nextUrl.pathname === '/') {
-    return NextResponse.redirect(new URL('/home', request.url))
+    return NextResponse.redirect(new URL(PATH_HOME, request.url))
   }
 
   if (request.method === 'PUT') {

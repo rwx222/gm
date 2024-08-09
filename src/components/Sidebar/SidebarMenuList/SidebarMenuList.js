@@ -4,6 +4,7 @@ import { usePathname } from 'next/navigation'
 import { useCallback, Suspense } from 'react'
 import classNames from 'classnames'
 
+import { PATH_HOME } from '@/constants'
 import CloseIcon from '@/icons/CloseIcon'
 import HomeIcon from '@/icons/HomeIcon'
 
@@ -28,10 +29,10 @@ function BaseComponent() {
 
       <li>
         <Link
-          href='/home'
+          href={PATH_HOME}
           onClick={toggleDrawer}
           className={classNames('text-xl font-normal', {
-            active: pathname === '/home',
+            active: pathname === PATH_HOME,
           })}
         >
           <HomeIcon />

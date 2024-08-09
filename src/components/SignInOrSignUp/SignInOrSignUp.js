@@ -9,6 +9,7 @@ import {
   signInWithPopup,
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
+  sendEmailVerification,
 } from 'firebase/auth'
 import {
   getFirestore,
@@ -39,11 +40,14 @@ import EyeOffIcon from '@/icons/EyeOffIcon'
 import LockIcon from '@/icons/LockIcon'
 import LockOpenIcon from '@/icons/LockOpenIcon'
 import IdCardIcon from '@/icons/IdCardIcon'
+import MailCheckIcon from '@/icons/MailCheckIcon'
+import BadgeCheckIcon from '@/icons/BadgeCheckIcon'
 import firebaseConfig from '@/data/firebaseConfig'
 import getCookie from '@/utils-front/getCookie'
 import {
   IS_PRODUCTION,
-  AFTER_LOGIN_PATH,
+  PATH_HOME,
+  PATH_AUTH,
   CSRF_TOKEN_NAME,
   PROVIDER_ID_GOOGLE,
   PROVIDER_ID_FACEBOOK,
@@ -53,23 +57,27 @@ import {
   ERROR_CODE_EMAIL_ALREADY_IN_USE,
   ERROR_CODE_INVALID_CREDENTIAL,
   ERROR_CODE_POPUP_CLOSED,
+  ERROR_CODE_TOO_MANY_REQUESTS,
   FIELD_EMAIL_MAX_LENGTH,
   FIELD_NAME_MAX_LENGTH,
   FIELD_PASSWORD_MIN_LENGTH,
   FIELD_PASSWORD_MAX_LENGTH,
   RECAPTCHA_SITE_KEY,
+  RECAPTCHA_SOCIAL_SIGN_IN_ACTION,
   RECAPTCHA_SIGN_UP_ACTION,
   RECAPTCHA_SIGN_IN_ACTION,
   RECAPTCHA_TOKEN_NAME,
   RECAPTCHA_MIN_SCORE,
 } from '@/constants'
 
-const MODAL_ID_AUTH_CSRF_ERROR = 'auth_csrf_error_modal_id'
-const MODAL_ID_AUTH_UNKNOWN_ERROR = 'auth_unknown_error_modal_id'
-const MODAL_ID_AUTH_RECAPTCHA_ERROR = 'auth_recaptcha_min_score_error_modal_id'
-const MODAL_ID_AUTH_EMAIL_ALREADY_IN_USE = 'auth_email_already_in_use_modal_id'
-const MODAL_ID_AUTH_INVALID_CREDENTIAL = 'auth_invalid_credential_modal_id'
-const MODAL_ID_AUTH_POPUP_CLOSED = 'auth_popup_closed_modal_id'
+const MODAL_ID_CSRF_ERROR = 'auth_csrf_error_modal_id'
+const MODAL_ID_UNKNOWN_ERROR = 'auth_unknown_error_modal_id'
+const MODAL_ID_RECAPTCHA_ERROR = 'auth_recaptcha_min_score_error_modal_id'
+const MODAL_ID_EMAIL_ALREADY_IN_USE = 'auth_email_already_in_use_modal_id'
+const MODAL_ID_INVALID_CREDENTIAL = 'auth_invalid_credential_modal_id'
+const MODAL_ID_POPUP_CLOSED = 'auth_popup_closed_modal_id'
+const MODAL_ID_VERIFY_EMAIL = 'verify_email_modal_id'
+const MODAL_ID_TOO_MANY_REQUESTS = 'too_many_requests_modal_id'
 
 const schemaUp = yup
   .object({
@@ -136,12 +144,14 @@ function BaseComponent() {
     register: registerUp,
     handleSubmit: handleSubmitUp,
     formState: { errors: errorsUp },
+    reset: resetSignUp,
   } = useForm({ resolver: yupResolver(schemaUp) })
 
   const {
     register: registerIn,
     handleSubmit: handleSubmitIn,
     formState: { errors: errorsIn },
+    reset: resetSignIn,
   } = useForm({ resolver: yupResolver(schemaIn) })
 
   useEffect(() => {
@@ -166,9 +176,7 @@ function BaseComponent() {
   }, [])
 
   const performLogin = useCallback(
-    async (result, newUserDisplayname = 'Anonymous') => {
-      const userIdToken = await result.user.getIdToken()
-
+    async (result, newUserDisplayname = null) => {
       const uid = result.user.uid
       const userPayload = {
         username: nanoid(),
@@ -197,8 +205,22 @@ function BaseComponent() {
         // if user doesn't exist, create it with the whole payload
         await setDoc(userDocRef, userPayload)
       }
-      const csrfToken = getCookie(CSRF_TOKEN_NAME)
 
+      if (!result.user.emailVerified) {
+        await sendEmailVerification(result.user, {
+          url: window.location.origin + PATH_AUTH,
+        })
+
+        resetSignUp()
+        resetSignIn()
+        goToSignIn()
+        document.getElementById(MODAL_ID_VERIFY_EMAIL).showModal()
+
+        return null
+      }
+
+      const userIdToken = await result.user.getIdToken()
+      const csrfToken = getCookie(CSRF_TOKEN_NAME)
       const sessionRes = await fetch('/api/session', {
         method: 'PUT',
         headers: {
@@ -218,9 +240,9 @@ function BaseComponent() {
       const nowTime = now.getTime()
       const tid = takeLast(6, `${nowTime}`)
 
-      router.replace(AFTER_LOGIN_PATH + '?tid=' + tid)
+      router.replace(PATH_HOME + '?tid=' + tid)
     },
-    [router]
+    [goToSignIn, resetSignIn, resetSignUp, router]
   )
 
   const handleErrorMessage = useCallback(
@@ -229,7 +251,7 @@ function BaseComponent() {
 
       if (errorMsg.includes(ERROR_CODE_INVALID_CSRF)) {
         JsCookie.remove(CSRF_TOKEN_NAME)
-        document.getElementById(MODAL_ID_AUTH_CSRF_ERROR).showModal()
+        document.getElementById(MODAL_ID_CSRF_ERROR).showModal()
         deleteCsrfCookieAction()
           .then(() => null)
           .catch((error) => {
@@ -240,15 +262,17 @@ function BaseComponent() {
             router.refresh()
           })
       } else if (errorMsg.includes(ERROR_CODE_RECAPTCHA_LOW_SCORE)) {
-        document.getElementById(MODAL_ID_AUTH_RECAPTCHA_ERROR).showModal()
+        document.getElementById(MODAL_ID_RECAPTCHA_ERROR).showModal()
       } else if (errorMsg.includes(ERROR_CODE_EMAIL_ALREADY_IN_USE)) {
-        document.getElementById(MODAL_ID_AUTH_EMAIL_ALREADY_IN_USE).showModal()
+        document.getElementById(MODAL_ID_EMAIL_ALREADY_IN_USE).showModal()
       } else if (errorMsg.includes(ERROR_CODE_INVALID_CREDENTIAL)) {
-        document.getElementById(MODAL_ID_AUTH_INVALID_CREDENTIAL).showModal()
+        document.getElementById(MODAL_ID_INVALID_CREDENTIAL).showModal()
       } else if (errorMsg.includes(ERROR_CODE_POPUP_CLOSED)) {
-        document.getElementById(MODAL_ID_AUTH_POPUP_CLOSED).showModal()
+        document.getElementById(MODAL_ID_POPUP_CLOSED).showModal()
+      } else if (errorMsg.includes(ERROR_CODE_TOO_MANY_REQUESTS)) {
+        document.getElementById(MODAL_ID_TOO_MANY_REQUESTS).showModal()
       } else {
-        document.getElementById(MODAL_ID_AUTH_UNKNOWN_ERROR).showModal()
+        document.getElementById(MODAL_ID_UNKNOWN_ERROR).showModal()
       }
     },
     [router]
@@ -258,6 +282,9 @@ function BaseComponent() {
     (provider) => async () => {
       try {
         setIsAuthenticating(true)
+
+        await validateRecaptcha(RECAPTCHA_SOCIAL_SIGN_IN_ACTION)
+
         const result = await signInWithPopup(
           authRef.current,
           provider === PROVIDER_ID_FACEBOOK
@@ -554,7 +581,7 @@ function BaseComponent() {
 
       <section className='py-4 flex flex-row justify-center'>
         <Link
-          href='/home'
+          href={PATH_HOME}
           prefetch={false}
           disabled={isAuthenticating}
           className='btn btn-wide text-lg'
@@ -609,38 +636,66 @@ const validateRecaptcha = async (action = 'nameless') => {
 const ErrorModalsSection = () => {
   return (
     <section>
-      <ErrorModalDialog
-        id={MODAL_ID_AUTH_POPUP_CLOSED}
+      <ModalDialog
+        id={MODAL_ID_VERIFY_EMAIL}
+        title={<div className='text-success'>{`Verifica Tu Email`}</div>}
+        description={
+          <>
+            <div className='flex items-start pb-5'>
+              <div className='shrink-0 grow-0 basis-8 pt-1 text-success'>
+                <MailCheckIcon width='24' height='24' />
+              </div>
+              {`Te enviamos un correo de verificación a tu email.`}
+            </div>
+
+            <div className='flex items-start'>
+              <div className='shrink-0 grow-0 basis-8 pt-1 text-success'>
+                <BadgeCheckIcon width='24' height='24' />
+              </div>
+              {`Verifica tu email para poder iniciar sesión.`}
+            </div>
+          </>
+        }
+      />
+
+      <ModalDialog
+        id={MODAL_ID_TOO_MANY_REQUESTS}
+        title={`Muchos Intentos De Ingreso`}
+        description={`Cuidado, estas haciendo demasiados intentos de ingreso fallidos. Por favor, intenta mas tarde.`}
+      />
+
+      <ModalDialog
+        id={MODAL_ID_POPUP_CLOSED}
         title={`Ingreso Interrumpido`}
         description={`Se interrumpió el proceso de ingreso antes de completarlo. Por favor, intenta otra vez.`}
       />
 
-      <ErrorModalDialog
-        id={MODAL_ID_AUTH_INVALID_CREDENTIAL}
+      <ModalDialog
+        id={MODAL_ID_INVALID_CREDENTIAL}
         title={`Email/Contraseña Incorrectos`}
         description={`El email o contraseña son incorrectos. Por favor, revisa los campos e intenta otra vez.`}
       />
 
-      <ErrorModalDialog
-        id={MODAL_ID_AUTH_EMAIL_ALREADY_IN_USE}
+      <ModalDialog
+        id={MODAL_ID_EMAIL_ALREADY_IN_USE}
         title={`Ya Tienes una cuenta`}
         description={`Ya existe una cuenta con este email. Puedes iniciar sesión, o intentar con otro email.`}
       />
 
-      <ErrorModalDialog
-        id={MODAL_ID_AUTH_CSRF_ERROR}
+      <ModalDialog
+        id={MODAL_ID_CSRF_ERROR}
         title={`Intenta Otra Vez`}
         description={`Por seguridad y debido a inactividad no se realizó la acción. Por favor, intenta otra vez.`}
       />
 
-      <ErrorModalDialog
-        id={MODAL_ID_AUTH_RECAPTCHA_ERROR}
+      <ModalDialog
+        id={MODAL_ID_RECAPTCHA_ERROR}
         title={`Error De Seguridad`}
         description={`No pudimos determinar un nivel de seguridad válido. Por favor, intenta mas tarde.`}
       />
 
-      <ErrorModalDialog
-        id={MODAL_ID_AUTH_UNKNOWN_ERROR}
+      <ModalDialog
+        id={MODAL_ID_UNKNOWN_ERROR}
         title={`Error Inesperado`}
         description={`Ha ocurrido un error inesperado. Por favor, recarga la página e intenta otra vez.`}
       />
@@ -648,12 +703,12 @@ const ErrorModalsSection = () => {
   )
 }
 
-const ErrorModalDialog = ({ id, title, description }) => {
+const ModalDialog = ({ id, title, description }) => {
   return (
     <dialog id={id} className='modal modal-bottom sm:modal-middle'>
       <div className='modal-box'>
         <h3 className='font-bold text-lg'>{title}</h3>
-        <p className='py-4'>{description}</p>
+        <div className='py-4'>{description}</div>
         <div className='modal-action'>
           <form method='dialog'>
             <button type='submit' className='btn'>

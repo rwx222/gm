@@ -6,9 +6,10 @@ export const IS_PRODUCTION = process.env.NODE_ENV === 'production'
 
 export const REGEX_USER_PASSWORD = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).+$/
 
-export const AUTH_PATH = '/auth'
-
-export const AFTER_LOGIN_PATH = '/home'
+// routes
+export const PATH_AUTH = '/auth'
+export const PATH_HOME = '/home'
+export const PATH_CHANGE_THEME = '/home/change-theme'
 
 // form fields
 export const FIELD_EMAIL_MAX_LENGTH = 254
@@ -25,11 +26,13 @@ export const ERROR_CODE_ACCOUNT_EXISTS =
 export const ERROR_CODE_EMAIL_ALREADY_IN_USE = 'auth/email-already-in-use'
 export const ERROR_CODE_INVALID_CREDENTIAL = 'auth/invalid-credential'
 export const ERROR_CODE_POPUP_CLOSED = 'auth/popup-closed-by-user'
+export const ERROR_CODE_TOO_MANY_REQUESTS = 'auth/too-many-requests'
 
 // reCAPTCHA
 export const ERROR_CODE_RECAPTCHA_LOW_SCORE = 'auth/recaptcha-low-score'
 export const RECAPTCHA_TOKEN_NAME = 'vrcth'
 export const RECAPTCHA_SITE_KEY = process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY
+export const RECAPTCHA_SOCIAL_SIGN_IN_ACTION = 'auth/social_sign_in'
 export const RECAPTCHA_SIGN_IN_ACTION = 'auth/sign_in'
 export const RECAPTCHA_SIGN_UP_ACTION = 'auth/sign_up'
 export const RECAPTCHA_MIN_SCORE = 0.6

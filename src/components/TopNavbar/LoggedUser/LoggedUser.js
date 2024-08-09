@@ -5,7 +5,7 @@ import { isNonEmptyString } from 'ramda-adjunct'
 
 import UserMenuList from '@/components/TopNavbar/UserMenuList/UserMenuList'
 import CircleUserRoundIcon from '@/icons/CircleUserRoundIcon'
-import { AUTH_PATH } from '@/constants'
+import { PATH_AUTH } from '@/constants'
 import getUserData from '@/data/getUserData'
 
 export const AvatarSkeleton = () => {
@@ -21,7 +21,7 @@ export default async function LoggedUser() {
 
   const avatarUrl = isNonEmptyString(userData.photoURL)
     ? userData.photoURL
-    : getNameAvatarUrl(userData.displayName)
+    : getNameAvatarUrl(userData.displayName ?? 'Anonymous')
 
   return (
     <div
@@ -47,7 +47,7 @@ const getNameAvatarUrl = (name) => {
 const NotLoggedUser = () => {
   return (
     <Link
-      href={AUTH_PATH}
+      href={PATH_AUTH}
       className='btn btn-outline text-base xs:text-lg font-normal'
     >
       {`Ingresar`}

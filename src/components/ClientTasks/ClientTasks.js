@@ -3,7 +3,7 @@ import { useEffect, Suspense } from 'react'
 import { themeChange } from 'theme-change'
 import { usePathname, useSearchParams, useRouter } from 'next/navigation'
 
-import { AFTER_LOGIN_PATH } from '@/constants'
+import { PATH_HOME } from '@/constants'
 
 function BaseComponent() {
   const pathname = usePathname()
@@ -13,7 +13,7 @@ function BaseComponent() {
   useEffect(() => {
     // refresh user data after login
     const tid = searchParams.get('tid')
-    if (tid && pathname === AFTER_LOGIN_PATH) {
+    if (tid && pathname === PATH_HOME) {
       router.refresh()
     }
   }, [pathname, router, searchParams])

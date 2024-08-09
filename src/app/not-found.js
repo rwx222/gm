@@ -1,6 +1,8 @@
 /* eslint-disable @next/next/no-img-element */
 import Link from 'next/link'
 
+import { PATH_HOME } from '@/constants'
+
 export const metadata = {
   title: 'Parece que te perdiste - Error 404',
 }
@@ -32,7 +34,7 @@ export default function NotFound() {
       </section>
 
       <section className='flex justify-center'>
-        <Link href='/home' className='btn btn-secondary btn-wide text-lg'>
+        <Link href={PATH_HOME} className='btn btn-secondary btn-wide text-lg'>
           {`Volver`}
         </Link>
       </section>

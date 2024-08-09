@@ -3,7 +3,7 @@ import { useCallback, Suspense } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 
-import { AUTH_PATH } from '@/constants'
+import { PATH_AUTH, PATH_CHANGE_THEME } from '@/constants'
 import logoutAction from '@/actions/logoutAction'
 import PaletteIcon from '@/icons/PaletteIcon'
 import LogoutIcon from '@/icons/LogoutIcon'
@@ -13,7 +13,7 @@ function BaseComponent({ userUid }) {
 
   const logout = useCallback(async () => {
     await logoutAction(userUid)
-    router.push(AUTH_PATH)
+    router.push(PATH_AUTH)
   }, [router, userUid])
 
   const closeUserAvatarMenu = useCallback(() => {
@@ -36,7 +36,7 @@ function BaseComponent({ userUid }) {
     >
       <li>
         <Link
-          href='/home/change-theme'
+          href={PATH_CHANGE_THEME}
           className='text-base sm:text-lg font-normal'
         >
           <PaletteIcon />
