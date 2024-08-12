@@ -8,10 +8,21 @@ import {
 } from '@/constants'
 import { generateCsrfToken, verifyCsrfToken } from '@/utils/csrfTokens'
 
+const firebaseProjectId = process.env.NEXT_PUBLIC_FIRE_PROJECT_ID
+
 export async function middleware(request) {
+  const { pathname } = request.nextUrl
   const responseNext = NextResponse.next()
 
-  if (request.nextUrl.pathname === '/') {
+  if (
+    pathname.startsWith('/__/auth/') ||
+    pathname.startsWith('/__/firebase/')
+  ) {
+    const baseUrl = `https://${firebaseProjectId}.firebaseapp.com`
+    return NextResponse.rewrite(new URL(pathname, baseUrl))
+  }
+
+  if (pathname === '/') {
     return NextResponse.redirect(new URL(PATH_HOME, request.url))
   }
 
