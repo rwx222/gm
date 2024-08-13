@@ -48,6 +48,7 @@ const NotLoggedUser = () => {
   return (
     <Link
       href={PATH_AUTH}
+      prefetch={false}
       className='btn btn-outline text-base xs:text-lg font-normal'
     >
       {`Ingresar`}

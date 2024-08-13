@@ -1,6 +1,10 @@
+const isProd = process.env.NODE_ENV === 'production'
+
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIRE_API_KEY,
-  authDomain: process.env.NEXT_PUBLIC_FIRE_AUTH_DOMAIN,
+  authDomain: isProd
+    ? process.env.NEXT_PUBLIC_FIRE_AUTH_DOMAIN
+    : 'localhost:3000',
   projectId: process.env.NEXT_PUBLIC_FIRE_PROJECT_ID,
   storageBucket: process.env.NEXT_PUBLIC_FIRE_STORAGE_BUCKET,
   messagingSenderId: process.env.NEXT_PUBLIC_FIRE_MESSAGING_SENDER_ID,

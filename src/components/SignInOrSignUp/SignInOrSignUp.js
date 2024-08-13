@@ -5,8 +5,9 @@ import {
   GoogleAuthProvider,
   FacebookAuthProvider,
   getAuth,
-  inMemoryPersistence,
-  signInWithPopup,
+  signInWithRedirect,
+  getRedirectResult,
+  browserSessionPersistence,
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
   sendEmailVerification,
@@ -134,7 +135,7 @@ function BaseComponent() {
   const googleProviderRef = useRef(null)
   const facebookProviderRef = useRef(null)
 
-  const [isAuthenticating, setIsAuthenticating] = useState(false)
+  const [isAuthenticating, setIsAuthenticating] = useState(true)
   const [showPasswd, setShowPasswd] = useState(false)
   const [isSignInTab, setIsSignInTab] = useState(() => {
     return urlTab.toLocaleLowerCase() !== 'signup'
@@ -159,7 +160,7 @@ function BaseComponent() {
   useEffect(() => {
     const app = initializeApp(firebaseConfig)
     authRef.current = getAuth(app)
-    authRef.current.setPersistence(inMemoryPersistence)
+    authRef.current.setPersistence(browserSessionPersistence)
     authRef.current.useDeviceLanguage()
     dbRef.current = getFirestore(app)
 
@@ -218,6 +219,7 @@ function BaseComponent() {
         resetSignIn()
         goToSignIn()
         document.getElementById(MODAL_ID_VERIFY_EMAIL).showModal()
+        setIsAuthenticating(false)
 
         return null
       }
@@ -234,6 +236,8 @@ function BaseComponent() {
       const sessionData = await sessionRes.json()
 
       if (!sessionRes.ok || !sessionData?.uid) {
+        setIsAuthenticating(false)
+
         throw new Error(
           sessionData?.code || sessionData?.message || sessionRes.statusText
         )
@@ -288,22 +292,20 @@ function BaseComponent() {
 
         await validateRecaptcha(RECAPTCHA_SOCIAL_SIGN_IN_ACTION)
 
-        const result = await signInWithPopup(
+        await signInWithRedirect(
           authRef.current,
           provider === PROVIDER_ID_FACEBOOK
             ? facebookProviderRef.current
             : googleProviderRef.current
         )
-        await performLogin(result)
       } catch (error) {
         console.error(error)
         console.error(`💥> LWP '${error?.message}'`)
         handleErrorMessage(error)
-      } finally {
         setIsAuthenticating(false)
       }
     },
-    [handleErrorMessage, performLogin]
+    [handleErrorMessage]
   )
 
   const onSubmitSignIn = useCallback(
@@ -322,9 +324,8 @@ function BaseComponent() {
       } catch (error) {
         console.error(error)
         console.error(`💥> SSI '${error?.message}'`)
-        handleErrorMessage(error)
-      } finally {
         setIsAuthenticating(false)
+        handleErrorMessage(error)
       }
     },
     [handleErrorMessage, performLogin]
@@ -347,13 +348,33 @@ function BaseComponent() {
       } catch (error) {
         console.error(error)
         console.error(`💥> SSU '${error?.message}'`)
-        handleErrorMessage(error)
-      } finally {
         setIsAuthenticating(false)
+        handleErrorMessage(error)
       }
     },
     [handleErrorMessage, performLogin]
   )
+
+  useEffect(() => {
+    const afterAuth = async () => {
+      try {
+        const result = await getRedirectResult(authRef.current)
+
+        if (result) {
+          await performLogin(result)
+        } else {
+          setIsAuthenticating(false)
+        }
+      } catch (error) {
+        console.error(error)
+        console.error(`💥> AAR '${error?.message}'`)
+        setIsAuthenticating(false)
+        handleErrorMessage(error)
+      }
+    }
+
+    afterAuth()
+  }, [handleErrorMessage, performLogin])
 
   const SocialButtons = (
     <div className='pt-4 flex justify-center gap-5'>
@@ -408,6 +429,7 @@ function BaseComponent() {
                   className='grow'
                   placeholder='Email'
                   defaultValue={urlEmail}
+                  disabled={isAuthenticating}
                   {...registerIn('email')}
                 />
               </label>
@@ -435,6 +457,7 @@ function BaseComponent() {
                   type={showPasswd ? 'text' : 'password'}
                   className='grow'
                   placeholder='Contraseña'
+                  disabled={isAuthenticating}
                   {...registerIn('password')}
                 />
               </label>
@@ -467,6 +490,8 @@ function BaseComponent() {
             <div className='text-center pt-5'>
               <Link
                 href={PATH_FORGOT_PASSWORD}
+                prefetch={false}
+                disabled={isAuthenticating}
                 className='underline font-normal text-primary text-sm xs:text-base'
               >
                 {`Olvidé mi contraseña`}
@@ -506,6 +531,7 @@ function BaseComponent() {
                   type='text'
                   className='grow'
                   placeholder='Nombre completo'
+                  disabled={isAuthenticating}
                   {...registerUp('name')}
                 />
               </label>
@@ -529,6 +555,7 @@ function BaseComponent() {
                   type='email'
                   className='grow'
                   placeholder='Email'
+                  disabled={isAuthenticating}
                   {...registerUp('email')}
                 />
               </label>
@@ -556,6 +583,7 @@ function BaseComponent() {
                   type={showPasswd ? 'text' : 'password'}
                   className='grow'
                   placeholder='Contraseña'
+                  disabled={isAuthenticating}
                   {...registerUp('password', {
                     minLength: 8,
                     maxLength: 13,

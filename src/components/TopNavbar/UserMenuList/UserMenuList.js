@@ -1,19 +1,35 @@
 'use client'
-import { useCallback, Suspense } from 'react'
+import { useCallback, useRef, useEffect, Suspense } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
+import { initializeApp } from 'firebase/app'
+import { getAuth, signOut } from 'firebase/auth'
 
 import { PATH_AUTH, PATH_CHANGE_THEME } from '@/constants'
+import firebaseConfig from '@/data/firebaseConfig'
 import logoutAction from '@/actions/logoutAction'
 import PaletteIcon from '@/icons/PaletteIcon'
 import LogoutIcon from '@/icons/LogoutIcon'
 
 function BaseComponent({ userUid }) {
+  const authRef = useRef(null)
   const router = useRouter()
 
+  useEffect(() => {
+    const app = initializeApp(firebaseConfig)
+    authRef.current = getAuth(app)
+  }, [])
+
   const logout = useCallback(async () => {
-    await logoutAction(userUid)
-    router.push(PATH_AUTH)
+    try {
+      await logoutAction(userUid)
+      await signOut(authRef.current)
+    } catch (error) {
+      console.error(error)
+      console.error(`💥> LOU '${error?.message}'`)
+    } finally {
+      router.push(PATH_AUTH)
+    }
   }, [router, userUid])
 
   const closeUserAvatarMenu = useCallback(() => {
