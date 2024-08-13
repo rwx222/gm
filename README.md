@@ -15,7 +15,7 @@ Check the latest deployment preview at the following URL:
 - Yarn should be used as the package manager to keep consistent versions.
 - Use yarn classic version `1.x.x`.
 
-## The local development URL is `https://localhost:3000` with `https`
+## The local URL is `https://localhost:3000` with `https`
 
 Due to certain security limitations (and for greater ease and convenience), the local server is run over the `https` protocol to enable testing Google login on localhost.
 
