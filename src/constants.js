@@ -31,7 +31,7 @@ export const ERROR_CODE_TOO_MANY_REQUESTS = 'auth/too-many-requests'
 
 // reCAPTCHA
 export const ERROR_CODE_RECAPTCHA_LOW_SCORE = 'auth/recaptcha-low-score'
-export const RECAPTCHA_TOKEN_NAME = 'vrcth'
+export const RECAPTCHA_TOKEN_NAME = 'vgrcth'
 export const RECAPTCHA_SITE_KEY = process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY
 export const RECAPTCHA_SOCIAL_SIGN_IN_ACTION = 'auth_social_sign_in'
 export const RECAPTCHA_SIGN_IN_ACTION = 'auth_sign_in'
