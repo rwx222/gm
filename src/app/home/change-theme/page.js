@@ -1,7 +1,7 @@
 import { redirect } from 'next/navigation'
 
 import ChangeThemeOptions from '@/components/ChangeThemeOptions/ChangeThemeOptions'
-import getUserUid from '@/data/getUserUid'
+import getSessionUserUid from '@/data/getSessionUserUid'
 import { PATH_AUTH } from '@/constants'
 
 export const dynamic = 'force-dynamic'
@@ -11,7 +11,7 @@ export const metadata = {
 }
 
 export default async function ChangeTheme() {
-  const uid = await getUserUid()
+  const uid = await getSessionUserUid()
 
   if (!uid) {
     // the user is not logged in

@@ -4,11 +4,11 @@
   "private": true,
   "scripts": {
     "https-proxy": "local-ssl-proxy --source 3000 --target 3001",
-    "alt-dev": "next dev -p 3001",
-    "dev": "concurrently --kill-others \"yarn https-proxy\" \"yarn alt-dev\"",
-    "start": "next start",
+    "dev": "concurrently --kill-others \"yarn https-proxy\" \"next dev -p 3001\"",
+    "local-start": "concurrently --kill-others \"yarn https-proxy\" \"next start -p 3001\"",
+    "lint": "next lint",
     "build": "next build",
-    "lint": "next lint"
+    "start": "next start"
   },
   "dependencies": {
     "@edge-csrf/core": "2.2.2",

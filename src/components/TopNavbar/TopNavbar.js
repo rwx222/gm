@@ -1,10 +1,7 @@
 import Link from 'next/link'
-import { Suspense } from 'react'
 
 import { PATH_HOME } from '@/constants'
-import LoggedUser, {
-  AvatarSkeleton,
-} from '@/components/TopNavbar/LoggedUser/LoggedUser'
+import TopRightMenu from '@/components/TopNavbar/TopRightMenu/TopRightMenu'
 import MenuIcon from '@/icons/MenuIcon'
 
 export default function TopNavbar() {
@@ -29,9 +26,7 @@ export default function TopNavbar() {
       </div>
 
       <div className='flex-none'>
-        <Suspense fallback={<AvatarSkeleton />}>
-          <LoggedUser />
-        </Suspense>
+        <TopRightMenu />
       </div>
     </div>
   )

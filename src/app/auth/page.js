@@ -2,7 +2,7 @@ import { redirect } from 'next/navigation'
 
 import SignInOrSignUp from '@/components/SignInOrSignUp/SignInOrSignUp'
 import { PATH_HOME } from '@/constants'
-import getUserUid from '@/data/getUserUid'
+import getSessionUserUid from '@/data/getSessionUserUid'
 
 export const dynamic = 'force-dynamic'
 
@@ -12,7 +12,7 @@ export const metadata = {
 }
 
 export default async function Auth() {
-  const uid = await getUserUid()
+  const uid = await getSessionUserUid()
 
   if (uid) {
     // the user is already logged in

@@ -14,7 +14,7 @@ export const PATH_CHANGE_THEME = '/home/change-theme'
 
 // form fields
 export const FIELD_EMAIL_MAX_LENGTH = 254
-export const FIELD_NAME_MAX_LENGTH = 100
+export const FIELD_NAME_MAX_LENGTH = 60
 export const FIELD_PASSWORD_MIN_LENGTH = 8
 export const FIELD_PASSWORD_MAX_LENGTH = 128
 
@@ -30,9 +30,10 @@ export const ERROR_CODE_POPUP_CLOSED = 'auth/popup-closed-by-user'
 export const ERROR_CODE_TOO_MANY_REQUESTS = 'auth/too-many-requests'
 
 // reCAPTCHA
+export const RECAPTCHA_SITE_KEY = process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY
+export const RECAPTCHA_SECRET_KEY = process.env.RECAPTCHA_SECRET_KEY
 export const ERROR_CODE_RECAPTCHA_LOW_SCORE = 'auth/recaptcha-low-score'
 export const RECAPTCHA_TOKEN_NAME = 'vgrcth'
-export const RECAPTCHA_SITE_KEY = process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY
 export const RECAPTCHA_SOCIAL_SIGN_IN_ACTION = 'auth_social_sign_in'
 export const RECAPTCHA_SIGN_IN_ACTION = 'auth_sign_in'
 export const RECAPTCHA_SIGN_UP_ACTION = 'auth_sign_up'

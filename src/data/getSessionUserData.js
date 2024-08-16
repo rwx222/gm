@@ -2,19 +2,21 @@ import { cookies } from 'next/headers'
 
 import { SESSION_COOKIE_NAME } from '@/constants'
 import { admin, db } from '@/data/firestore'
+import formatUserData from '@/utils/formatUserData'
 
 /**
- * Retrieves user data from the DB, based on the session cookie.
+ * Retrieves current session user data from the DB, based on the session cookie.
  *
  * @return {Promise<{
  *   uid: string,
- *   username: string,
- *   displayName: string,
  *   email: string,
- *   photoURL: string
+ *   username: string,
+ *   displayName: string | null,
+ *   photoURL: string | null,
+ *   phoneNumber: string | null
  * } | null>} User data object, or null if the session cookie is not valid or if an error occurs.
  */
-export default async function getUserData() {
+export default async function getSessionUserData() {
   try {
     const cookieStore = cookies()
     const sessionCookieValue = cookieStore.get(SESSION_COOKIE_NAME)?.value
@@ -24,17 +26,10 @@ export default async function getUserData() {
         .auth()
         .verifySessionCookie(sessionCookieValue, true)
       const uid = decodedClaims?.uid
-      const userDocRef = db.collection('users').doc(uid)
-      const userDocSnap = await userDocRef.get()
+      const userDocSnap = await db.collection('users').doc(uid).get()
       const userData = userDocSnap.data()
 
-      return {
-        uid,
-        username: userData?.username,
-        displayName: userData?.displayName,
-        email: userData?.email,
-        photoURL: userData?.photoURL,
-      }
+      return formatUserData(uid, userData)
     }
   } catch (error) {
     console.error(error)

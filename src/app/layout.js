@@ -6,8 +6,6 @@ import '@/app/globals.css'
 import ClientTasks from '@/components/ClientTasks/ClientTasks'
 import { RECAPTCHA_SITE_KEY } from '@/constants'
 
-export const dynamic = 'force-dynamic'
-
 export const metadata = {
   title: {
     template: '%s | GameMaster',

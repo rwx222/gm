@@ -1,8 +1,11 @@
 import { NextResponse } from 'next/server'
 
-import { ERROR_CODE_INTERNAL_SERVER, RECAPTCHA_TOKEN_NAME } from '@/constants'
+import {
+  ERROR_CODE_INTERNAL_SERVER,
+  RECAPTCHA_TOKEN_NAME,
+  RECAPTCHA_SECRET_KEY,
+} from '@/constants'
 
-const RECAPTCHA_SECRET_KEY = process.env.RECAPTCHA_SECRET_KEY
 const RECAPTCHA_VERIFY_URL = 'https://www.google.com/recaptcha/api/siteverify'
 
 export async function PUT(request) {

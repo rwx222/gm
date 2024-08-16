@@ -6,9 +6,8 @@ import {
   CSRF_TOKEN_NAME,
   ERROR_CODE_INVALID_CSRF,
 } from '@/constants'
+import firebaseConfig from '@/data/firebaseConfig'
 import { generateCsrfToken, verifyCsrfToken } from '@/utils/csrfTokens'
-
-const firebaseProjectId = process.env.NEXT_PUBLIC_FIRE_PROJECT_ID
 
 export async function middleware(request) {
   const { pathname } = request.nextUrl
@@ -18,7 +17,7 @@ export async function middleware(request) {
     pathname.startsWith('/__/auth/') ||
     pathname.startsWith('/__/firebase/')
   ) {
-    const baseUrl = `https://${firebaseProjectId}.firebaseapp.com`
+    const baseUrl = `https://${firebaseConfig.projectId}.firebaseapp.com`
     return NextResponse.rewrite(new URL(pathname, baseUrl))
   }
 

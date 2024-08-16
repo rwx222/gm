@@ -530,7 +530,7 @@ function BaseComponent() {
                 <input
                   type='text'
                   className='grow'
-                  placeholder='Nombre completo'
+                  placeholder='Nombre o Alias'
                   disabled={isAuthenticating}
                   {...registerUp('name')}
                 />
