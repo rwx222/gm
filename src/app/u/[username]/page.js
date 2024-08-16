@@ -15,10 +15,6 @@ export async function generateStaticParams() {
 export async function generateMetadata({ params }) {
   const userData = await getUserDataFromUsername(params.username)
 
-  if (!userData) {
-    notFound()
-  }
-
   return {
     title: `Perfil de ${userData?.displayName || params.username}`,
   }
@@ -26,6 +22,10 @@ export async function generateMetadata({ params }) {
 
 export default async function U({ params }) {
   const userData = await getUserDataFromUsername(params.username)
+
+  if (!userData) {
+    notFound()
+  }
 
   return (
     <main className='px-5'>
