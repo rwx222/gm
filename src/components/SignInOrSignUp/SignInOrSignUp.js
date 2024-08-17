@@ -26,7 +26,6 @@ import * as yup from 'yup'
 import { yupResolver } from '@hookform/resolvers/yup'
 import { pick, takeLast } from 'ramda'
 import { isNonEmptyString } from 'ramda-adjunct'
-import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 import JsCookie from 'js-cookie'
 import { useForm } from 'react-hook-form'
@@ -472,8 +471,8 @@ function BaseComponent() {
             >
               <button
                 type='button'
-                onClick={goToSignUp}
                 disabled={isAuthenticating}
+                onClick={goToSignUp}
                 className='underline font-normal text-primary text-sm xs:text-base'
               >{`No tengo una cuenta`}</button>
             </ShowHidePassword>
@@ -488,14 +487,12 @@ function BaseComponent() {
             </button>
 
             <div className='text-center pt-5'>
-              <Link
-                href={PATH_FORGOT_PASSWORD}
-                prefetch={false}
+              <button
+                type='button'
                 disabled={isAuthenticating}
+                onClick={() => router.push(PATH_FORGOT_PASSWORD)}
                 className='underline font-normal text-primary text-sm xs:text-base'
-              >
-                {`Olvidé mi contraseña`}
-              </Link>
+              >{`Olvidé mi contraseña`}</button>
             </div>
 
             <RecaptchaPolicyLabel />
@@ -622,16 +619,16 @@ function BaseComponent() {
       </div>
 
       <section className='py-4 flex flex-row justify-center'>
-        <Link
-          href={PATH_HOME}
-          prefetch={false}
+        <button
+          type='button'
           disabled={isAuthenticating}
+          onClick={() => router.push(PATH_HOME)}
           className='btn btn-wide text-lg'
         >
           {isAuthenticating && <span className='loading loading-spinner' />}
 
           {`Volver`}
-        </Link>
+        </button>
       </section>
 
       <ErrorModalsSection />

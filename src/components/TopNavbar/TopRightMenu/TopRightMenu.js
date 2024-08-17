@@ -1,6 +1,6 @@
 'use client'
 /* eslint-disable @next/next/no-img-element */
-import { useState, useCallback, useRef, useEffect, Suspense } from 'react'
+import { useCallback, useRef, useEffect, Suspense } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { initializeApp } from 'firebase/app'
@@ -14,7 +14,8 @@ import CircleUserRoundIcon from '@/icons/CircleUserRoundIcon'
 import PaletteIcon from '@/icons/PaletteIcon'
 import LogoutIcon from '@/icons/LogoutIcon'
 import logoutAction from '@/actions/logoutAction'
-import getAvatarDataAction from '@/actions/getAvatarDataAction'
+import getAvatarUrlFromName from '@/utils/getAvatarUrlFromName'
+import { useStore } from '@/components/ClientTasks/ClientTasks'
 
 const USER_AVATAR_MENU_ID = 'main-user-avatar-dropdown'
 const LINK_CLASSNAME = 'text-base sm:text-lg font-normal'
@@ -22,29 +23,20 @@ const LINK_CLASSNAME = 'text-base sm:text-lg font-normal'
 function BaseComponent() {
   const authRef = useRef(null)
   const router = useRouter()
-  const [dataFetched, setDataFetched] = useState(false)
-  const [userData, setUserData] = useState(null)
+
+  const resetAvatarData = useStore((state) => state.resetAvatarData)
+  const avatarFetched = useStore((state) => state.avatarFetched)
+  const avatarData = useStore((state) => state.avatarData)
 
   useEffect(() => {
     const app = initializeApp(firebaseConfig)
     authRef.current = getAuth(app)
-
-    getAvatarDataAction()
-      .then((avatarData) => {
-        setUserData(avatarData)
-      })
-      .catch((error) => {
-        console.error(error)
-        console.error(`💥> SUD '${error?.message}'`)
-      })
-      .finally(() => {
-        setDataFetched(true)
-      })
   }, [])
 
   const logout = useCallback(async () => {
     try {
-      await logoutAction(userData?.uid)
+      resetAvatarData()
+      await logoutAction(avatarData?.uid)
       await signOut(authRef.current)
     } catch (error) {
       console.error(error)
@@ -52,7 +44,7 @@ function BaseComponent() {
     } finally {
       router.push(PATH_AUTH)
     }
-  }, [router, userData?.uid])
+  }, [router, avatarData?.uid, resetAvatarData])
 
   const closeUserAvatarMenu = useCallback(() => {
     const userAvatarMenuElement = document.getElementById(USER_AVATAR_MENU_ID)
@@ -64,17 +56,17 @@ function BaseComponent() {
     }, 400)
   }, [])
 
-  if (!userData) {
-    if (dataFetched) {
+  if (!avatarData) {
+    if (avatarFetched) {
       return <NotLoggedUser />
     }
 
     return <AvatarSkeleton />
   }
 
-  const avatarUrl = isNonEmptyString(userData?.photoURL)
-    ? userData?.photoURL
-    : getNameAvatarUrl(userData?.displayName ?? 'Anonymous')
+  const avatarUrl = isNonEmptyString(avatarData?.photoURL)
+    ? avatarData?.photoURL
+    : getAvatarUrlFromName(avatarData?.displayName)
 
   return (
     <div
@@ -93,7 +85,11 @@ function BaseComponent() {
         onClick={closeUserAvatarMenu}
       >
         <li>
-          <Link href={'/u/' + userData?.username} className={LINK_CLASSNAME}>
+          <Link
+            prefetch={false}
+            href={'/u/' + avatarData?.username}
+            className={LINK_CLASSNAME}
+          >
             <UserRoundIcon />
             {`Perfil`}
           </Link>
@@ -149,9 +145,4 @@ const NotLoggedUser = () => {
       <CircleUserRoundIcon />
     </Link>
   )
-}
-
-const getNameAvatarUrl = (name) => {
-  const nameUri = encodeURIComponent(name)
-  return `https://ui-avatars.com/api/?background=09090b&color=dca54c&name=${nameUri}`
 }
