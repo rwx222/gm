@@ -37,7 +37,7 @@ export default async function U({ params }) {
 
   return (
     <main className='px-5'>
-      <section className='flex justify-center pb-5'>
+      <section className='flex justify-center pt-3 pb-5'>
         <div className='avatar'>
           <div className='ring-accent ring-offset-base-100 w-24 rounded-full ring ring-offset-2'>
             <img alt='Foto de usuario' src={avatarUrl} />
@@ -46,7 +46,7 @@ export default async function U({ params }) {
       </section>
 
       <section className='pb-3'>
-        <h1 className='text-xl font-semibold text-center'>
+        <h1 className='text-xl sm:text-3xl font-semibold text-center'>
           {userData?.displayName}
         </h1>
       </section>

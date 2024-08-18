@@ -3,6 +3,7 @@ import { Suspense } from 'react'
 import Link from 'next/link'
 
 import { useStore } from '@/components/ClientTasks/ClientTasks'
+import { PATH_EDIT_PROFILE } from '@/constants'
 
 function BaseComponent({ urlUsername }) {
   const avatarData = useStore((state) => state.avatarData)
@@ -10,7 +11,12 @@ function BaseComponent({ urlUsername }) {
   if (avatarData?.username && avatarData?.username === urlUsername) {
     return (
       <section className='pb-3 text-center'>
-        <Link className='btn btn-neutral btn-sm btn-wide'>{`Editar`}</Link>
+        <Link
+          href={PATH_EDIT_PROFILE}
+          className='btn btn-neutral btn-sm btn-wide text-lg font-medium'
+        >
+          {`Editar`}
+        </Link>
       </section>
     )
   }

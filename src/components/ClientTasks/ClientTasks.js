@@ -1,11 +1,11 @@
 'use client'
-import { useEffect, useCallback, Suspense } from 'react'
+import { useEffect, Suspense } from 'react'
 import { create } from 'zustand'
 import { themeChange } from 'theme-change'
 import { usePathname, useSearchParams } from 'next/navigation'
 
 import getAvatarDataAction from '@/actions/getAvatarDataAction'
-import { PATH_HOME } from '@/constants'
+import { PATH_HOME, EVENT_REFRESH_AVATAR_DATA } from '@/constants'
 
 export const useStore = create((set) => ({
   avatarFetched: false,
@@ -28,34 +28,43 @@ function BaseComponent() {
   const updateAvatarFetched = useStore((state) => state.updateAvatarFetched)
   const updateAvatarData = useStore((state) => state.updateAvatarData)
 
-  const getUserAvatarData = useCallback(() => {
-    updateAvatarFetched(false)
-    getAvatarDataAction()
-      .then((avatarData) => {
-        updateAvatarData(avatarData)
-      })
-      .catch((error) => {
-        console.error(error)
-        console.error(`💥> UAD '${error?.message}'`)
-      })
-      .finally(() => {
-        updateAvatarFetched(true)
-      })
+  useEffect(() => {
+    // apply saved ui theme on the first render
+    themeChange(false)
+  }, [])
+
+  useEffect(() => {
+    function refreshAvatarData() {
+      console.log(`🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢`)
+      updateAvatarFetched(false)
+      getAvatarDataAction()
+        .then((avatarData) => {
+          updateAvatarData(avatarData)
+        })
+        .catch((error) => {
+          console.error(error)
+          console.error(`💥> UAD '${error?.message}'`)
+        })
+        .finally(() => {
+          updateAvatarFetched(true)
+        })
+    }
+    window.addEventListener(EVENT_REFRESH_AVATAR_DATA, refreshAvatarData)
+
+    refreshAvatarData()
+
+    return () => {
+      window.removeEventListener(EVENT_REFRESH_AVATAR_DATA, refreshAvatarData)
+    }
   }, [updateAvatarData, updateAvatarFetched])
 
   useEffect(() => {
     // refresh avatar data after login
     const tid = searchParams.get('tid')
     if (tid && pathname === PATH_HOME) {
-      getUserAvatarData()
+      window.dispatchEvent(new CustomEvent(EVENT_REFRESH_AVATAR_DATA))
     }
-  }, [pathname, searchParams, getUserAvatarData])
-
-  useEffect(() => {
-    // apply saved ui theme on the first render
-    themeChange(false)
-    getUserAvatarData()
-  }, [getUserAvatarData])
+  }, [pathname, searchParams])
 
   return null
 }

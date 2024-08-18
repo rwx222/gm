@@ -5,7 +5,7 @@ import { useCallback, Suspense } from 'react'
 import classNames from 'classnames'
 
 import { PATH_HOME } from '@/constants'
-import CloseIcon from '@/icons/CloseIcon'
+import XIcon from '@/icons/XIcon'
 import HomeIcon from '@/icons/HomeIcon'
 
 function BaseComponent() {
@@ -23,7 +23,7 @@ function BaseComponent() {
           htmlFor='main-layout-drawer'
           className='btn btn-circle btn-ghost sm:hidden'
         >
-          <CloseIcon />
+          <XIcon width='36' height='36' />
         </label>
       </li>
 

@@ -63,6 +63,7 @@ import {
   ERROR_CODE_POPUP_CLOSED,
   ERROR_CODE_TOO_MANY_REQUESTS,
   FIELD_EMAIL_MAX_LENGTH,
+  FIELD_NAME_MIN_LENGTH,
   FIELD_NAME_MAX_LENGTH,
   FIELD_PASSWORD_MIN_LENGTH,
   FIELD_PASSWORD_MAX_LENGTH,
@@ -86,7 +87,7 @@ const schemaUp = yup
       .string()
       .trim()
       .required('Campo requerido')
-      .min(2, 'Mínimo ${min} caracteres')
+      .min(FIELD_NAME_MIN_LENGTH, 'Mínimo ${min} caracteres')
       .max(FIELD_NAME_MAX_LENGTH, 'Máximo ${max} caracteres'),
     email: yup
       .string()
@@ -181,7 +182,7 @@ function BaseComponent() {
     async (result, newUserDisplayname = null) => {
       const uid = result.user.uid
       const userPayload = {
-        username: nanoid(),
+        username: nanoid().toLowerCase(),
         email: result.user.email,
         displayName: result.user.displayName || newUserDisplayname,
         photoURL: result.user.photoURL,
