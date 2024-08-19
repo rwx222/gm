@@ -2,5 +2,8 @@
   "extends": ["next/core-web-vitals", "eslint:recommended"],
   "globals": {
     "grecaptcha": true
+  },
+  "env": {
+    "es6": true
   }
 }

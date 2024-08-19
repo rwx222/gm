@@ -632,7 +632,7 @@ function BaseComponent() {
         </button>
       </section>
 
-      <ErrorModalsSection />
+      <ModalsSection />
     </div>
   )
 }
@@ -645,7 +645,7 @@ export default function SignInOrSignUp(props) {
   )
 }
 
-const ErrorModalsSection = () => {
+const ModalsSection = () => {
   return (
     <section>
       <BasicModalDialog
