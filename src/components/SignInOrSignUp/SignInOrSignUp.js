@@ -160,9 +160,10 @@ function BaseComponent() {
   useEffect(() => {
     const app = initializeApp(firebaseConfig)
     authRef.current = getAuth(app)
+    dbRef.current = getFirestore(app)
+
     authRef.current.setPersistence(browserSessionPersistence)
     authRef.current.useDeviceLanguage()
-    dbRef.current = getFirestore(app)
 
     googleProviderRef.current = new GoogleAuthProvider()
     facebookProviderRef.current = new FacebookAuthProvider()

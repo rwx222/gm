@@ -10,8 +10,9 @@ export const metadata = {
   title: 'Cambiar tema',
 }
 
-export default async function ChangeTheme() {
-  const uid = await getSessionUserUid()
+export default async function ChangeThemePage() {
+  const res = await getSessionUserUid()
+  const uid = res?.uid
 
   if (!uid) {
     // the user is not logged in

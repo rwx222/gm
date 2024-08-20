@@ -12,7 +12,7 @@
  *   phoneNumber: string | null
  * }} A formatted user data object.
  */
-export default function formatUserData(uid, userData) {
+export default function formatUserData(uid, userData, extraData) {
   return {
     uid,
     email: userData?.email,
@@ -20,5 +20,6 @@ export default function formatUserData(uid, userData) {
     displayName: userData?.displayName,
     photoURL: userData?.photoURL,
     phoneNumber: userData?.phoneNumber,
+    ...extraData,
   }
 }

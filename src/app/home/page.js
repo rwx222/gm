@@ -4,7 +4,7 @@ export const metadata = {
   title: 'Inicio',
 }
 
-export default function App() {
+export default function HomePage() {
   return (
     <main className='px-5'>
       <header>

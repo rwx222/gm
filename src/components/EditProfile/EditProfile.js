@@ -1,13 +1,34 @@
 'use client'
 /* eslint-disable @next/next/no-img-element */
 import 'react-easy-crop/react-easy-crop.css'
-import { Suspense, useCallback, useState, useEffect } from 'react'
+import { Suspense, useCallback, useState, useEffect, useRef } from 'react'
 import * as yup from 'yup'
 import { yupResolver } from '@hookform/resolvers/yup'
 import { useForm } from 'react-hook-form'
 import classNames from 'classnames'
 import { isNonEmptyString } from 'ramda-adjunct'
 import Cropper from 'react-easy-crop'
+import { initializeApp } from 'firebase/app'
+import {
+  getAuth,
+  browserSessionPersistence,
+  onAuthStateChanged,
+  signInWithCustomToken,
+} from 'firebase/auth'
+import {
+  getFirestore,
+  addDoc,
+  doc,
+  getDoc,
+  setDoc,
+  collection,
+  query,
+  where,
+  getDocs,
+  serverTimestamp,
+} from 'firebase/firestore'
+import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage'
+import { useRouter } from 'next/navigation'
 
 import {
   REGEX_USER_PHONE,
@@ -17,7 +38,10 @@ import {
   FIELD_NAME_MAX_LENGTH,
   FIELD_USERNAME_MIN_LENGTH,
   FIELD_USERNAME_MAX_LENGTH,
+  EVENT_REFRESH_AVATAR_DATA,
 } from '@/constants'
+import revalidatePathAction from '@/actions/revalidatePathAction'
+import firebaseConfig from '@/data/firebaseConfig'
 import EmailIcon from '@/icons/EmailIcon'
 import ChevronsLeftRightEllipsisIcon from '@/icons/ChevronsLeftRightEllipsisIcon'
 import Trash2Icon from '@/icons/Trash2Icon'
@@ -27,7 +51,7 @@ import SmartphoneIcon from '@/icons/SmartphoneIcon'
 import FieldErrorLabel from '@/ui/FieldErrorLabel'
 import BasicModalDialog from '@/ui/BasicModalDialog'
 import getAvatarUrlFromName from '@/utils/getAvatarUrlFromName'
-import getCroppedImg from '@/utils-front/getCroppedImg'
+import getCroppedImage from '@/utils-front/getCroppedImage'
 
 const schema = yup
   .object({
@@ -63,28 +87,27 @@ const MODAL_ID_CONFIRM_DELETE_PHOTO = 'confirm_delete_photo_modal_id'
 const MODAL_ID_USER_PHOTO_MAX_SIZE_ERROR = 'user_photo_max_size_error_modal_id'
 
 function BaseComponent({ userData }) {
-  // userData TODO: -> ltd
-  // uid: '6lsuIYvpDrNaxKSzdutt5SaYI5W2',
+  const customTokenRef = useRef(userData?.ct)
+  const authRef = useRef(null)
+  const dbRef = useRef(null)
+  const storageRef = useRef(null)
+  const croppedImageBlobRef = useRef(null)
+  const croppedAreaPixelsRef = useRef(null)
 
-  // photoURL: 'https://lh3.googleusercontent.com/a/ACg8ocLdEErmZAFLYBbn4r6_vy771l93pCD5FaVpm_bS6ds6sdB1LqPK=s96-c',
-  // displayName: 'Andres Rosero Velasquez',
-  // phoneNumber: null
-  // username: 'rmBJvr_AjoUPQw5eoWiAA',
-  // email: 'andresmedia84@gmail.com',
-
-  // cada que el usuario actualice dejar un log en otra coleccion
-  const [isLoading] = useState(false)
-  const [urlOrigin, setUrlOrigin] = useState('')
-  const [photoFileBlobUrl, setPhotoFileBlobUrl] = useState('')
+  const [isLoading, setIsLoading] = useState(false)
+  const [originUrl, setOriginUrl] = useState('')
+  const [tempImageUrlToCrop, setTempImageUrlToCrop] = useState('')
   const [zoom, setZoom] = useState(1)
   const [crop, setCrop] = useState({ x: 0, y: 0 })
-  const [areaPx, setAreaPx] = useState(null)
+
+  const router = useRouter()
 
   const {
     register,
     handleSubmit,
     formState: { errors },
     setValue,
+    setError,
     watch,
   } = useForm({
     resolver: yupResolver(schema),
@@ -95,43 +118,159 @@ function BaseComponent({ userData }) {
       username: userData?.username ?? '',
     },
   })
-  const usernameValue = watch('username')
-  const photoURLValue = watch('photoURL')
+  const usernameFieldValue = watch('username')
+  const photoURLFieldValue = watch('photoURL')
 
-  const isPhotoInForm = isNonEmptyString(photoURLValue)
-  const avatarUrl = isPhotoInForm
-    ? photoURLValue
+  const isPhotoInForm = isNonEmptyString(photoURLFieldValue)
+  const profilePhotoPreview = isPhotoInForm
+    ? photoURLFieldValue
     : getAvatarUrlFromName(userData?.displayName)
 
   useEffect(() => {
-    setUrlOrigin(window.location.origin)
+    const app = initializeApp(firebaseConfig)
+    authRef.current = getAuth(app)
+    dbRef.current = getFirestore(app)
+    storageRef.current = getStorage(app)
+
+    authRef.current.setPersistence(browserSessionPersistence)
+    authRef.current.useDeviceLanguage()
+
+    const unsubscribe = onAuthStateChanged(authRef.current, (user) => {
+      if (!user && customTokenRef.current) {
+        signInWithCustomToken(authRef.current, customTokenRef.current)
+          .then(() => true)
+          .catch((error) => {
+            console.error(error)
+            console.error(`💥> ASC '${error?.message}'`)
+            document.getElementById(MODAL_ID_UNKNOWN_ERROR).showModal()
+          })
+      }
+    })
+
+    setOriginUrl(window.location.origin)
+
+    return () => {
+      unsubscribe()
+    }
   }, [])
 
-  const onSubmitProfile = useCallback(async (formData) => {
-    console.log(`🚀🚀🚀 -> formData:`, formData)
-  }, [])
+  const onSubmitProfile = useCallback(
+    async (formData) => {
+      try {
+        setIsLoading(true)
+        const uid = userData?.uid
+        const q = query(
+          collection(dbRef.current, 'users'),
+          where('username', '==', formData.username)
+        )
+        const querySnap = await getDocs(q)
+        const logUserArr = []
+        const foundUids = querySnap.docs.map((doc) => {
+          logUserArr.push({
+            ...doc.data(),
+            _uid: doc.id,
+            _loggedAt: serverTimestamp(),
+          })
+          return doc.id
+        })
 
-  const handleDeletePhoto = useCallback(() => {
+        if (
+          foundUids.length === 0 ||
+          (foundUids.length === 1 && foundUids[0] === uid)
+        ) {
+          let photoURL = formData.photoURL
+          const profilePhotoRef = ref(
+            storageRef.current,
+            'user/' + uid + '/profile/photo.jpg'
+          )
+          if (croppedImageBlobRef.current) {
+            await uploadBytes(profilePhotoRef, croppedImageBlobRef.current)
+            photoURL = await getDownloadURL(profilePhotoRef)
+          }
+
+          const userPayload = {
+            photoURL,
+            username: formData.username,
+            displayName: formData.displayName,
+            phoneNumber: formData.phoneNumber,
+          }
+
+          const userDocRef = doc(dbRef.current, 'users', uid)
+
+          let logPayload = null
+          if (foundUids.length === 1) {
+            logPayload = logUserArr[0]
+          } else {
+            const currentUserDocSnap = await getDoc(userDocRef)
+            logPayload = {
+              ...currentUserDocSnap.data(),
+              _uid: currentUserDocSnap.id,
+              _loggedAt: serverTimestamp(),
+            }
+          }
+          addDoc(collection(dbRef.current, 'log_users'), logPayload)
+            .then(() => true)
+            .catch(console.error)
+
+          await setDoc(userDocRef, userPayload, { merge: true })
+
+          await revalidatePathAction(`/u/${userData?.username}`)
+            .then(() => true)
+            .catch(console.error)
+
+          window.dispatchEvent(new CustomEvent(EVENT_REFRESH_AVATAR_DATA))
+
+          router.push(`/u/${userPayload.username}`)
+        } else {
+          setIsLoading(false)
+          setError(
+            'username',
+            {
+              type: 'custom',
+              message: 'Este link no esta disponible',
+            },
+            {
+              shouldFocus: true,
+            }
+          )
+        }
+      } catch (error) {
+        console.error(error)
+        console.error(`💥> OSP '${error?.message}'`)
+        document.getElementById(MODAL_ID_UNKNOWN_ERROR).showModal()
+        setIsLoading(false)
+      }
+    },
+    [router, setError, userData?.uid, userData?.username]
+  )
+
+  const removePreviewPhoto = useCallback(() => {
+    croppedImageBlobRef.current = null
     setValue('photoURL', '')
     document.getElementById(MODAL_ID_CONFIRM_DELETE_PHOTO).close()
   }, [setValue])
 
-  const onCropComplete = useCallback((croppedArea, croppedAreaPixels) => {
-    setAreaPx(croppedAreaPixels)
-  }, [])
-
-  const handleCropImage = useCallback(async () => {
+  const cropImage = useCallback(async () => {
     try {
-      const croppedImage = await getCroppedImg(photoFileBlobUrl, areaPx)
-      console.log(`🚀🚀🚀 -> croppedImage:`, croppedImage) // TODO: -> ltd
-      setValue('photoURL', URL.createObjectURL(croppedImage))
-      setPhotoFileBlobUrl('')
+      croppedImageBlobRef.current = null
+      const newCroppedImageBlob = await getCroppedImage(
+        tempImageUrlToCrop,
+        croppedAreaPixelsRef.current
+      )
+
+      croppedImageBlobRef.current = newCroppedImageBlob
+      setValue('photoURL', URL.createObjectURL(newCroppedImageBlob))
+      setTempImageUrlToCrop('')
     } catch (error) {
       console.error(error)
       console.error(`💥> HCI '${error?.message}'`)
       document.getElementById(MODAL_ID_UNKNOWN_ERROR).showModal()
     }
-  }, [areaPx, photoFileBlobUrl, setValue])
+  }, [tempImageUrlToCrop, setValue])
+
+  const onCropComplete = useCallback((croppedArea, croppedAreaPixels) => {
+    croppedAreaPixelsRef.current = croppedAreaPixels
+  }, [])
 
   return (
     <div className='relative pb-10'>
@@ -140,7 +279,7 @@ function BaseComponent({ userData }) {
           type='button'
           className='btn btn-circle'
           title='Eliminar foto'
-          disabled={!isPhotoInForm}
+          disabled={isLoading || !isPhotoInForm}
           onClick={() => {
             if (isPhotoInForm) {
               document.getElementById(MODAL_ID_CONFIRM_DELETE_PHOTO).showModal()
@@ -152,7 +291,7 @@ function BaseComponent({ userData }) {
 
         <div className='avatar'>
           <div className='ring-primary ring-offset-base-100 w-24 rounded-full ring ring-offset-2'>
-            <img alt='Foto de usuario' src={avatarUrl} />
+            <img alt='Foto de usuario' src={profilePhotoPreview} />
           </div>
         </div>
 
@@ -160,10 +299,11 @@ function BaseComponent({ userData }) {
           type='button'
           className='btn btn-circle'
           title='Subir foto'
+          disabled={isLoading}
           onClick={() => {
+            croppedAreaPixelsRef.current = null
             setZoom(1)
             setCrop({ x: 0, y: 0 })
-            setAreaPx(null)
             document.getElementById(UPLOAD_USER_PHOTO_INPUT_ID).value = ''
             document.getElementById(UPLOAD_USER_PHOTO_INPUT_ID).click()
           }}
@@ -223,10 +363,12 @@ function BaseComponent({ userData }) {
           </div>
 
           <div className='pb-1 text-xs sm:text-base min-h-5 sm:min-h-7 font-semibold w-full whitespace-nowrap overflow-hidden overflow-ellipsis'>
-            {urlOrigin && (
+            {originUrl && (
               <>
-                {urlOrigin + '/u/'}
-                <span className='font-normal'>{usernameValue}</span>
+                {originUrl + '/u/'}
+                <span className='font-normal'>
+                  {usernameFieldValue.toLowerCase()}
+                </span>
               </>
             )}
           </div>
@@ -286,12 +428,12 @@ function BaseComponent({ userData }) {
         </form>
       </section>
 
-      {isNonEmptyString(photoFileBlobUrl) && (
+      {isNonEmptyString(tempImageUrlToCrop) && (
         <div className='bg-base-100 absolute top-0 bottom-0 left-0 right-0'>
           <div className='absolute left-0 right-0 top-0 bottom-20'>
             <Cropper
               aspect={1}
-              image={photoFileBlobUrl}
+              image={tempImageUrlToCrop}
               crop={crop}
               zoom={zoom}
               onCropChange={setCrop}
@@ -317,12 +459,12 @@ function BaseComponent({ userData }) {
             <div className='flex justify-center gap-5'>
               <button
                 type='button'
-                onClick={() => setPhotoFileBlobUrl('')}
+                onClick={() => setTempImageUrlToCrop('')}
                 className='btn btn-neutral btn-sm min-w-28 xs:text-lg'
               >{`Cancelar`}</button>
               <button
                 type='button'
-                onClick={handleCropImage}
+                onClick={cropImage}
                 className='btn btn-secondary btn-sm min-w-28 xs:text-lg'
               >{`Listo`}</button>
             </div>
@@ -347,7 +489,7 @@ function BaseComponent({ userData }) {
                   .getElementById(MODAL_ID_USER_PHOTO_MAX_SIZE_ERROR)
                   .showModal()
               } else {
-                setPhotoFileBlobUrl(URL.createObjectURL(file))
+                setTempImageUrlToCrop(URL.createObjectURL(file))
               }
             }
           } catch (error) {
@@ -367,7 +509,7 @@ function BaseComponent({ userData }) {
           afterCloseContent={
             <button
               type='button'
-              onClick={handleDeletePhoto}
+              onClick={removePreviewPhoto}
               className='btn btn-error'
             >
               {`Si, eliminar`}

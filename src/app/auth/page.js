@@ -11,8 +11,9 @@ export const metadata = {
   description: 'Para ingresar inicia sesión o crea una cuenta',
 }
 
-export default async function Auth() {
-  const uid = await getSessionUserUid()
+export default async function AuthPage() {
+  const res = await getSessionUserUid(true)
+  const uid = res?.uid
 
   if (uid) {
     // the user is already logged in

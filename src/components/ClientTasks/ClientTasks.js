@@ -35,7 +35,6 @@ function BaseComponent() {
 
   useEffect(() => {
     function refreshAvatarData() {
-      console.log(`🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢`)
       updateAvatarFetched(false)
       getAvatarDataAction()
         .then((avatarData) => {

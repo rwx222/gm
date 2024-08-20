@@ -10,8 +10,8 @@ export const metadata = {
   title: 'Editar perfil',
 }
 
-export default async function ChangeTheme() {
-  const userData = await getSessionUserData()
+export default async function EditProfilePage() {
+  const userData = await getSessionUserData(true, true)
 
   if (!userData) {
     // the user is not logged in

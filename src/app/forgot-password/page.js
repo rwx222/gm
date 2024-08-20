@@ -12,8 +12,9 @@ export const metadata = {
     'Si olvidaste tu contraseña puedes recuperarla a traves de tu email.',
 }
 
-export default async function ForgotPassword() {
-  const uid = await getSessionUserUid()
+export default async function ForgotPasswordPage() {
+  const res = await getSessionUserUid()
+  const uid = res?.uid
 
   if (uid) {
     // the user is already logged in

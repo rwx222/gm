@@ -1,5 +1,5 @@
 export const dynamic = 'force-dynamic'
 
-export default function Home() {
+export default function AppPage() {
   return <div>{`hello world`}</div>
 }
