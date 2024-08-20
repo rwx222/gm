@@ -27,7 +27,9 @@ export default async function getSessionUserUid(
       const decodedClaims = await admin
         .auth()
         .verifySessionCookie(sessionCookieValue, Boolean(checkRevoked))
-      const res = { uid: decodedClaims?.uid ?? null }
+      const res = {
+        uid: decodedClaims?.uid ?? null,
+      }
 
       if (getCustomToken) {
         res.ct = await admin.auth().createCustomToken(res.uid)

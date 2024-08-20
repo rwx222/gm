@@ -11,7 +11,7 @@ export const metadata = {
 }
 
 export default async function EditProfilePage() {
-  const userData = await getSessionUserData(true, true)
+  const userData = await getSessionUserData(true)
 
   if (!userData) {
     // the user is not logged in

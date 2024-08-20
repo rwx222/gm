@@ -38,9 +38,9 @@ import {
   FIELD_NAME_MAX_LENGTH,
   FIELD_USERNAME_MIN_LENGTH,
   FIELD_USERNAME_MAX_LENGTH,
-  EVENT_REFRESH_AVATAR_DATA,
 } from '@/constants'
 import revalidatePathAction from '@/actions/revalidatePathAction'
+import getCustomTokenAction from '@/actions/getCustomTokenAction'
 import firebaseConfig from '@/data/firebaseConfig'
 import EmailIcon from '@/icons/EmailIcon'
 import ChevronsLeftRightEllipsisIcon from '@/icons/ChevronsLeftRightEllipsisIcon'
@@ -52,6 +52,7 @@ import FieldErrorLabel from '@/ui/FieldErrorLabel'
 import BasicModalDialog from '@/ui/BasicModalDialog'
 import getAvatarUrlFromName from '@/utils/getAvatarUrlFromName'
 import getCroppedImage from '@/utils-front/getCroppedImage'
+import dispatchRefreshAvatarData from '@/utils-front/dispatchRefreshAvatarData'
 
 const schema = yup
   .object({
@@ -82,12 +83,12 @@ const schema = yup
 
 const USER_PHOTO_MAX_SIZE_IN_MB = 5
 const UPLOAD_USER_PHOTO_INPUT_ID = 'upload_user_photo_input_id'
-const MODAL_ID_UNKNOWN_ERROR = 'edit_profile_unknown_error_modal_id'
 const MODAL_ID_CONFIRM_DELETE_PHOTO = 'confirm_delete_photo_modal_id'
+const MODAL_ID_UNKNOWN_ERROR = 'edit_profile_unknown_error_modal_id'
 const MODAL_ID_USER_PHOTO_MAX_SIZE_ERROR = 'user_photo_max_size_error_modal_id'
+const MODAL_ID_BACKGROUND_SIGN_IN_ERROR = 'blsiwct_error_modal_id'
 
 function BaseComponent({ userData }) {
-  const customTokenRef = useRef(userData?.ct)
   const authRef = useRef(null)
   const dbRef = useRef(null)
   const storageRef = useRef(null)
@@ -95,6 +96,7 @@ function BaseComponent({ userData }) {
   const croppedAreaPixelsRef = useRef(null)
 
   const [isLoading, setIsLoading] = useState(false)
+  const [signingInBackground, setSigningInBackground] = useState(false)
   const [originUrl, setOriginUrl] = useState('')
   const [tempImageUrlToCrop, setTempImageUrlToCrop] = useState('')
   const [zoom, setZoom] = useState(1)
@@ -136,13 +138,19 @@ function BaseComponent({ userData }) {
     authRef.current.useDeviceLanguage()
 
     const unsubscribe = onAuthStateChanged(authRef.current, (user) => {
-      if (!user && customTokenRef.current) {
-        signInWithCustomToken(authRef.current, customTokenRef.current)
-          .then(() => true)
+      if (!user) {
+        setSigningInBackground(true)
+        getCustomTokenAction()
+          .then((customToken) => {
+            return signInWithCustomToken(authRef.current, customToken)
+          })
+          .then(() => setSigningInBackground(false))
           .catch((error) => {
             console.error(error)
             console.error(`💥> ASC '${error?.message}'`)
-            document.getElementById(MODAL_ID_UNKNOWN_ERROR).showModal()
+            document
+              .getElementById(MODAL_ID_BACKGROUND_SIGN_IN_ERROR)
+              .showModal()
           })
       }
     })
@@ -218,7 +226,7 @@ function BaseComponent({ userData }) {
             .then(() => true)
             .catch(console.error)
 
-          window.dispatchEvent(new CustomEvent(EVENT_REFRESH_AVATAR_DATA))
+          dispatchRefreshAvatarData()
 
           router.push(`/u/${userPayload.username}`)
         } else {
@@ -299,7 +307,7 @@ function BaseComponent({ userData }) {
           type='button'
           className='btn btn-circle'
           title='Subir foto'
-          disabled={isLoading}
+          disabled={isLoading || signingInBackground}
           onClick={() => {
             croppedAreaPixelsRef.current = null
             setZoom(1)
@@ -536,6 +544,12 @@ const ModalsSection = ({ children }) => {
         id={MODAL_ID_UNKNOWN_ERROR}
         title={`Error Inesperado`}
         description={`Ha ocurrido un error inesperado. Por favor, intenta otra vez.`}
+      />
+
+      <BasicModalDialog
+        id={MODAL_ID_BACKGROUND_SIGN_IN_ERROR}
+        title={`Error De Sesión`}
+        description={`No es normal, pero ha ocurrido un error con la sesión. Por favor, intenta recargar la página, o cierra sesión e ingresa nuevamente para un correcto funcionamiento.`}
       />
 
       <BasicModalDialog

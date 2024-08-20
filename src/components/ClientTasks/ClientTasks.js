@@ -5,6 +5,7 @@ import { themeChange } from 'theme-change'
 import { usePathname, useSearchParams } from 'next/navigation'
 
 import getAvatarDataAction from '@/actions/getAvatarDataAction'
+import dispatchRefreshAvatarData from '@/utils-front/dispatchRefreshAvatarData'
 import { PATH_HOME, EVENT_REFRESH_AVATAR_DATA } from '@/constants'
 
 export const useStore = create((set) => ({
@@ -27,6 +28,7 @@ function BaseComponent() {
 
   const updateAvatarFetched = useStore((state) => state.updateAvatarFetched)
   const updateAvatarData = useStore((state) => state.updateAvatarData)
+  const resetAvatarData = useStore((state) => state.resetAvatarData)
 
   useEffect(() => {
     // apply saved ui theme on the first render
@@ -43,6 +45,7 @@ function BaseComponent() {
         .catch((error) => {
           console.error(error)
           console.error(`💥> UAD '${error?.message}'`)
+          resetAvatarData()
         })
         .finally(() => {
           updateAvatarFetched(true)
@@ -55,13 +58,13 @@ function BaseComponent() {
     return () => {
       window.removeEventListener(EVENT_REFRESH_AVATAR_DATA, refreshAvatarData)
     }
-  }, [updateAvatarData, updateAvatarFetched])
+  }, [resetAvatarData, updateAvatarData, updateAvatarFetched])
 
   useEffect(() => {
     // refresh avatar data after login
     const tid = searchParams.get('tid')
     if (tid && pathname === PATH_HOME) {
-      window.dispatchEvent(new CustomEvent(EVENT_REFRESH_AVATAR_DATA))
+      dispatchRefreshAvatarData()
     }
   }, [pathname, searchParams])
 
