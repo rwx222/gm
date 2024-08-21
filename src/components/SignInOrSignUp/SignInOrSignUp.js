@@ -364,9 +364,9 @@ function BaseComponent() {
     const afterAuth = async () => {
       try {
         const providerAfterRedirect = sessionStorage.getItem(SIGNING_IN_SS_KEY)
+        sessionStorage.removeItem(SIGNING_IN_SS_KEY)
 
         const result = await getRedirectResult(authRef.current)
-        sessionStorage.removeItem(SIGNING_IN_SS_KEY)
 
         if (result) {
           await performLogin(result)
