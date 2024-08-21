@@ -12,8 +12,7 @@ export const metadata = {
 }
 
 export default async function AuthPage() {
-  const res = await getSessionUserUid(true)
-  const uid = res?.uid
+  const uid = await getSessionUserUid()
 
   if (uid) {
     // the user is already logged in

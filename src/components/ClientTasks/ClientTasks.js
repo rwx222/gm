@@ -6,7 +6,7 @@ import { usePathname, useSearchParams } from 'next/navigation'
 
 import getAvatarDataAction from '@/actions/getAvatarDataAction'
 import dispatchRefreshAvatarData from '@/utils-front/dispatchRefreshAvatarData'
-import { PATH_HOME, EVENT_REFRESH_AVATAR_DATA } from '@/constants'
+import { PATH_HOME, PATH_AUTH, EVENT_REFRESH_AVATAR_DATA } from '@/constants'
 
 export const useStore = create((set) => ({
   avatarFetched: false,
@@ -37,19 +37,24 @@ function BaseComponent() {
 
   useEffect(() => {
     function refreshAvatarData() {
-      updateAvatarFetched(false)
-      getAvatarDataAction()
-        .then((avatarData) => {
-          updateAvatarData(avatarData)
-        })
-        .catch((error) => {
-          console.error(error)
-          console.error(`💥> UAD '${error?.message}'`)
-          resetAvatarData()
-        })
-        .finally(() => {
-          updateAvatarFetched(true)
-        })
+      if (window.location.pathname !== PATH_AUTH) {
+        console.info(`🦋🦋🦋🦋🦋🦋🦋🦋🦋🦋`)
+        updateAvatarFetched(false)
+        getAvatarDataAction()
+          .then((avatarData) => {
+            updateAvatarData(avatarData)
+          })
+          .catch((error) => {
+            console.error(error)
+            console.error(`💥> UAD '${error?.message}'`)
+            resetAvatarData()
+          })
+          .finally(() => {
+            updateAvatarFetched(true)
+          })
+      } else {
+        updateAvatarFetched(true)
+      }
     }
     window.addEventListener(EVENT_REFRESH_AVATAR_DATA, refreshAvatarData)
 
@@ -67,6 +72,8 @@ function BaseComponent() {
       dispatchRefreshAvatarData()
     }
   }, [pathname, searchParams])
+
+  console.info(`🖥️🖥️🖥️🖥️🖥️🖥️🖥️🖥️🖥️🖥️ '${pathname}'`)
 
   return null
 }

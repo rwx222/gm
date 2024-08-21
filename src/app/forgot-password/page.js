@@ -13,8 +13,7 @@ export const metadata = {
 }
 
 export default async function ForgotPasswordPage() {
-  const res = await getSessionUserUid()
-  const uid = res?.uid
+  const uid = await getSessionUserUid()
 
   if (uid) {
     // the user is already logged in

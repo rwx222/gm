@@ -72,9 +72,11 @@ import {
   RECAPTCHA_SIGN_IN_ACTION,
 } from '@/constants'
 
+const SIGNING_IN_SS_KEY = 'signing_in_with_provider'
 const MODAL_ID_CSRF_ERROR = 'auth_csrf_error_modal_id'
 const MODAL_ID_UNKNOWN_ERROR = 'auth_unknown_error_modal_id'
 const MODAL_ID_RECAPTCHA_ERROR = 'auth_recaptcha_min_score_error_modal_id'
+const MODAL_ID_AFER_AUTH_RESULT_ERROR = 'after_auth_result_error_modal_id'
 const MODAL_ID_EMAIL_ALREADY_IN_USE = 'auth_email_already_in_use_modal_id'
 const MODAL_ID_INVALID_CREDENTIAL = 'auth_invalid_credential_modal_id'
 const MODAL_ID_POPUP_CLOSED = 'auth_popup_closed_modal_id'
@@ -293,6 +295,8 @@ function BaseComponent() {
 
         await validateRecaptcha(RECAPTCHA_SOCIAL_SIGN_IN_ACTION)
 
+        sessionStorage.setItem(SIGNING_IN_SS_KEY, provider)
+
         await signInWithRedirect(
           authRef.current,
           provider === PROVIDER_ID_FACEBOOK
@@ -359,12 +363,19 @@ function BaseComponent() {
   useEffect(() => {
     const afterAuth = async () => {
       try {
+        const providerAfterRedirect = sessionStorage.getItem(SIGNING_IN_SS_KEY)
+
         const result = await getRedirectResult(authRef.current)
+        sessionStorage.removeItem(SIGNING_IN_SS_KEY)
 
         if (result) {
           await performLogin(result)
         } else {
           setIsAuthenticating(false)
+
+          if (providerAfterRedirect) {
+            document.getElementById(MODAL_ID_AFER_AUTH_RESULT_ERROR).showModal()
+          }
         }
       } catch (error) {
         console.error(error)
@@ -669,6 +680,12 @@ const ModalsSection = () => {
             </div>
           </>
         }
+      />
+
+      <BasicModalDialog
+        id={MODAL_ID_AFER_AUTH_RESULT_ERROR}
+        title={`Error De Autenticación`}
+        description={`Ha ocurrido un error despues de la redirección. Por favor, intenta recargando la página o intenta mas tarde.`}
       />
 
       <BasicModalDialog

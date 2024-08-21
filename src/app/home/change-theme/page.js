@@ -11,8 +11,7 @@ export const metadata = {
 }
 
 export default async function ChangeThemePage() {
-  const res = await getSessionUserUid()
-  const uid = res?.uid
+  const uid = await getSessionUserUid()
 
   if (!uid) {
     // the user is not logged in
