@@ -82,7 +82,7 @@ const schema = yup
   })
   .required()
 
-const USER_PHOTO_MAX_SIZE_IN_MB = 5
+const USER_PHOTO_MAX_SIZE_IN_MB = 7
 const UPLOAD_USER_PHOTO_INPUT_ID = 'upload_user_photo_input_id'
 const MODAL_ID_CONFIRM_DELETE_PHOTO = 'confirm_delete_photo_modal_id'
 const MODAL_ID_UNKNOWN_ERROR = 'edit_profile_unknown_error_modal_id'
@@ -570,7 +570,7 @@ const ModalsSection = ({ children }) => {
         id={MODAL_ID_USER_PHOTO_MAX_SIZE_ERROR}
         title={`Tamaño De Archivo`}
         description={`La imagen supera el tamaño maximo de ${
-          USER_PHOTO_MAX_SIZE_IN_MB - 2
+          USER_PHOTO_MAX_SIZE_IN_MB - 1
         } MB.`}
       />
 

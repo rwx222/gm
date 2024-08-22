@@ -6,6 +6,8 @@ import getAllUsersData from '@/data/getAllUsersData'
 import getUserDataFromUsername from '@/data/getUserDataFromUsername'
 import getAvatarUrlFromName from '@/utils/getAvatarUrlFromName'
 import UserProfileEditSection from '@/components/UserProfileEditSection/UserProfileEditSection'
+import UserAvatarButton from '@/components/UserAvatarButton/UserAvatarButton'
+import XIcon from '@/icons/XIcon'
 
 export const dynamic = 'force-static'
 
@@ -24,6 +26,8 @@ export async function generateMetadata({ params }) {
   }
 }
 
+const MODAL_ID_USER_PHOTO_VIEW = 'user_photo_view_modal_id'
+
 export default async function U({ params }) {
   const userData = await getUserDataFromUsername(params.username)
 
@@ -38,11 +42,10 @@ export default async function U({ params }) {
   return (
     <main className='px-5'>
       <section className='flex justify-center pt-3 pb-5'>
-        <div className='avatar'>
-          <div className='ring-accent ring-offset-base-100 w-24 rounded-full ring ring-offset-2'>
-            <img alt='Foto de usuario' src={avatarUrl} />
-          </div>
-        </div>
+        <UserAvatarButton
+          srcUrl={avatarUrl}
+          modalId={MODAL_ID_USER_PHOTO_VIEW}
+        />
       </section>
 
       <section className='pb-3'>
@@ -88,6 +91,23 @@ export default async function U({ params }) {
           </SkillItem>
         </div>
       </section>
+
+      <div>
+        <dialog id={MODAL_ID_USER_PHOTO_VIEW} className='modal'>
+          <div className='relative'>
+            <form method='dialog'>
+              <button className='btn btn-neutral btn-sm btn-circle absolute right-2 top-2'>
+                <XIcon width={24} height={24} />
+              </button>
+            </form>
+            <img
+              src={avatarUrl}
+              alt='Foto de usuario'
+              className='w-[300px] xs:w-[360px] sm:w-[400px]'
+            />
+          </div>
+        </dialog>
+      </div>
     </main>
   )
 }
