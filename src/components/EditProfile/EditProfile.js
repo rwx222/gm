@@ -11,9 +11,9 @@ import Cropper from 'react-easy-crop'
 import { initializeApp } from 'firebase/app'
 import {
   getAuth,
-  browserSessionPersistence,
   onAuthStateChanged,
   signInWithCustomToken,
+  inMemoryPersistence,
 } from 'firebase/auth'
 import {
   getFirestore,
@@ -39,6 +39,7 @@ import {
   FIELD_NAME_MAX_LENGTH,
   FIELD_USERNAME_MIN_LENGTH,
   FIELD_USERNAME_MAX_LENGTH,
+  EVENT_SIGN_OUT_SIGNAL,
 } from '@/constants'
 import revalidatePathAction from '@/actions/revalidatePathAction'
 import getCustomTokenAction from '@/actions/getCustomTokenAction'
@@ -90,6 +91,7 @@ const MODAL_ID_USER_PHOTO_MAX_SIZE_ERROR = 'user_photo_max_size_error_modal_id'
 const MODAL_ID_BACKGROUND_SIGN_IN_ERROR = 'blsiwct_error_modal_id'
 
 function BaseComponent({ userData }) {
+  const allowBackgroundSignIn = useRef(true)
   const authRef = useRef(null)
   const dbRef = useRef(null)
   const storageRef = useRef(null)
@@ -130,16 +132,28 @@ function BaseComponent({ userData }) {
     : getAvatarUrlFromName(userData?.displayName)
 
   useEffect(() => {
+    function handleSignOutSignal() {
+      allowBackgroundSignIn.current = false
+    }
+
+    window.addEventListener(EVENT_SIGN_OUT_SIGNAL, handleSignOutSignal)
+
+    return () => {
+      window.removeEventListener(EVENT_SIGN_OUT_SIGNAL, handleSignOutSignal)
+    }
+  }, [])
+
+  useEffect(() => {
     const app = initializeApp(firebaseConfig)
     authRef.current = getAuth(app)
     dbRef.current = getFirestore(app)
     storageRef.current = getStorage(app)
 
-    authRef.current.setPersistence(browserSessionPersistence)
+    authRef.current.setPersistence(inMemoryPersistence)
     authRef.current.useDeviceLanguage()
 
     const unsubscribe = onAuthStateChanged(authRef.current, (user) => {
-      if (!user) {
+      if (!user && allowBackgroundSignIn.current) {
         setSigningInBackground(true)
         getCustomTokenAction()
           .then((customToken) => {

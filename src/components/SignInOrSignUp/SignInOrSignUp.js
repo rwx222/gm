@@ -7,7 +7,7 @@ import {
   getAuth,
   signInWithRedirect,
   getRedirectResult,
-  browserSessionPersistence,
+  inMemoryPersistence,
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
   sendEmailVerification,
@@ -164,7 +164,7 @@ function BaseComponent() {
     authRef.current = getAuth(app)
     dbRef.current = getFirestore(app)
 
-    authRef.current.setPersistence(browserSessionPersistence)
+    authRef.current.setPersistence(inMemoryPersistence)
     authRef.current.useDeviceLanguage()
 
     googleProviderRef.current = new GoogleAuthProvider()

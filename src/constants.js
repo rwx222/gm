@@ -9,6 +9,7 @@ export const REGEX_USER_USERNAME = /^[a-z0-9_-]+$/
 export const REGEX_USER_PHONE = /^\+?[1-9]\d{1,14}$/
 
 export const EVENT_REFRESH_AVATAR_DATA = 'CUSTOM_EVENT_REFRESH_AVATAR_DATA_KEY'
+export const EVENT_SIGN_OUT_SIGNAL = 'CUSTOM_EVENT_SIGNING_OUT_SIGNAL_KEY'
 
 // routes
 export const PATH_AUTH = '/auth'

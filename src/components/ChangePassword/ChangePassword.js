@@ -68,6 +68,7 @@ function BaseComponent() {
   useEffect(() => {
     const app = initializeApp(firebaseConfig)
     authRef.current = getAuth(app)
+
     authRef.current.setPersistence(inMemoryPersistence)
     authRef.current.useDeviceLanguage()
   }, [])

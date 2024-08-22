@@ -4,7 +4,7 @@ import { useCallback, useRef, useEffect, Suspense } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { initializeApp } from 'firebase/app'
-import { getAuth, signOut } from 'firebase/auth'
+import { getAuth, signOut, inMemoryPersistence } from 'firebase/auth'
 import { isNonEmptyString } from 'ramda-adjunct'
 
 import { PATH_AUTH, PATH_CHANGE_THEME } from '@/constants'
@@ -16,6 +16,7 @@ import LogoutIcon from '@/icons/LogoutIcon'
 import logoutAction from '@/actions/logoutAction'
 import getAvatarUrlFromName from '@/utils/getAvatarUrlFromName'
 import { useStore } from '@/components/ClientTasks/ClientTasks'
+import dispatchSignOutSignal from '@/utils-front/dispatchSignOutSignal'
 
 const USER_AVATAR_MENU_ID = 'main-user-avatar-dropdown'
 const LINK_CLASSNAME = 'text-base sm:text-lg font-normal'
@@ -31,10 +32,13 @@ function BaseComponent() {
   useEffect(() => {
     const app = initializeApp(firebaseConfig)
     authRef.current = getAuth(app)
+
+    authRef.current.setPersistence(inMemoryPersistence)
   }, [])
 
   const logout = useCallback(async () => {
     try {
+      dispatchSignOutSignal()
       resetAvatarData()
       await logoutAction(avatarData?.uid)
       await signOut(authRef.current)
