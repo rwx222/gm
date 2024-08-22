@@ -29,6 +29,7 @@ import {
 } from 'firebase/firestore'
 import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage'
 import { useRouter } from 'next/navigation'
+import ImageCompressor from 'js-image-compressor'
 
 import {
   REGEX_USER_PHONE,
@@ -269,6 +270,19 @@ function BaseComponent({ userData }) {
       croppedImageBlobRef.current = newCroppedImageBlob
       setValue('photoURL', URL.createObjectURL(newCroppedImageBlob))
       setTempImageUrlToCrop('')
+
+      const compressionOptions = {
+        file: newCroppedImageBlob,
+        maxWidth: 400,
+        quality: 0.9,
+        success: (compressedFile) => {
+          croppedImageBlobRef.current = compressedFile
+        },
+        error: (msg) => {
+          console.error(`💥> CIE`, msg)
+        },
+      }
+      new ImageCompressor(compressionOptions)
     } catch (error) {
       console.error(error)
       console.error(`💥> HCI '${error?.message}'`)
