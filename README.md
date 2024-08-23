@@ -56,6 +56,36 @@ This site implements `CSRF token validation` via a cookie to ensure that sensiti
 
 We use [reCaptcha v3](https://developers.google.com/recaptcha/docs/v3) to validate users and help mitigate and limit potential misuse. For this, in the `constants.js` file, there is a constant called `RECAPTCHA_MIN_SCORE`, which determines the minimum score a user must have to pass and approve the reCaptcha test.
 
+## Show a standard Toast
+
+We use `react-hot-toast` and this is the standard way to show a toast by type.
+
+```js
+toast.success('Hello world!', {
+  duration: 5000,
+  className: '!bg-success !text-success-content',
+  icon: '✅',
+})
+
+toast('Hello world!', {
+  duration: 5000,
+  className: '!bg-info !text-info-content',
+  icon: '🚹',
+})
+
+toast('Hello world!', {
+  duration: 5000,
+  className: '!bg-warning !text-warning-content',
+  icon: '🔥',
+})
+
+toast.error('Hello world!', {
+  duration: 5000,
+  className: '!bg-error !text-error-content',
+  icon: '⛔',
+})
+```
+
 ## Modify FIRE_ADMIN_PRIVATE_KEY env variable
 
 When generating a new Firebase `serviceAccount`, a small change must be made to the `FIRE_ADMIN_PRIVATE_KEY` variable before using it.

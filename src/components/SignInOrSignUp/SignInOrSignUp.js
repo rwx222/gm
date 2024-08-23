@@ -72,7 +72,7 @@ import {
   RECAPTCHA_SIGN_IN_ACTION,
 } from '@/constants'
 
-const SIGNING_IN_SS_KEY = 'signing_in_with_provider'
+const SS_KEY_SIGNING_IN = 'signing_in_with_provider'
 const MODAL_ID_CSRF_ERROR = 'auth_csrf_error_modal_id'
 const MODAL_ID_UNKNOWN_ERROR = 'auth_unknown_error_modal_id'
 const MODAL_ID_RECAPTCHA_ERROR = 'auth_recaptcha_min_score_error_modal_id'
@@ -295,7 +295,7 @@ function BaseComponent() {
 
         await validateRecaptcha(RECAPTCHA_SOCIAL_SIGN_IN_ACTION)
 
-        sessionStorage.setItem(SIGNING_IN_SS_KEY, provider)
+        sessionStorage.setItem(SS_KEY_SIGNING_IN, provider)
 
         await signInWithRedirect(
           authRef.current,
@@ -363,8 +363,8 @@ function BaseComponent() {
   useEffect(() => {
     const afterAuth = async () => {
       try {
-        const providerAfterRedirect = sessionStorage.getItem(SIGNING_IN_SS_KEY)
-        sessionStorage.removeItem(SIGNING_IN_SS_KEY)
+        const afterSignInFlag = sessionStorage.getItem(SS_KEY_SIGNING_IN)
+        sessionStorage.removeItem(SS_KEY_SIGNING_IN)
 
         const result = await getRedirectResult(authRef.current)
 
@@ -373,7 +373,7 @@ function BaseComponent() {
         } else {
           setIsAuthenticating(false)
 
-          if (providerAfterRedirect) {
+          if (afterSignInFlag) {
             document.getElementById(MODAL_ID_AFER_AUTH_RESULT_ERROR).showModal()
           }
         }

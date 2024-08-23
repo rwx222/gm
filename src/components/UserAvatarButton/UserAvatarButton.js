@@ -2,16 +2,6 @@
 /* eslint-disable @next/next/no-img-element */
 import { Suspense } from 'react'
 
-const StaticAvatar = ({ srcUrl }) => {
-  return (
-    <div className='avatar'>
-      <div className='ring-accent ring-offset-base-100 rounded-full ring ring-offset-2 w-36 xs:w-56'>
-        <img alt='Foto de usuario' src={srcUrl} />
-      </div>
-    </div>
-  )
-}
-
 function BaseComponent({ srcUrl, modalId }) {
   return (
     <button
@@ -25,6 +15,16 @@ function BaseComponent({ srcUrl, modalId }) {
         <img alt='Foto de usuario' src={srcUrl} />
       </div>
     </button>
+  )
+}
+
+const StaticAvatar = ({ srcUrl }) => {
+  return (
+    <div className='avatar'>
+      <div className='ring-accent ring-offset-base-100 rounded-full ring ring-offset-2 w-36 xs:w-56'>
+        <img alt='Foto de usuario' src={srcUrl} />
+      </div>
+    </div>
   )
 }
 

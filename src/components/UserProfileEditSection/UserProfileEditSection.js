@@ -1,12 +1,26 @@
 'use client'
-import { Suspense } from 'react'
+import { Suspense, useEffect } from 'react'
 import Link from 'next/link'
+import toast from 'react-hot-toast'
 
 import { useStore } from '@/components/ClientTasks/ClientTasks'
-import { PATH_EDIT_PROFILE } from '@/constants'
+import { PATH_EDIT_PROFILE, SS_KEY_SAVED_USER_PROFILE } from '@/constants'
 
 function BaseComponent({ urlUsername }) {
   const avatarData = useStore((state) => state.avatarData)
+
+  useEffect(() => {
+    const savedUserFlag = sessionStorage.getItem(SS_KEY_SAVED_USER_PROFILE)
+    sessionStorage.removeItem(SS_KEY_SAVED_USER_PROFILE)
+
+    if (savedUserFlag) {
+      toast.success('Cambios guardados', {
+        duration: 5000,
+        className: '!bg-success !text-success-content',
+        icon: '✅',
+      })
+    }
+  }, [])
 
   if (avatarData?.username && avatarData?.username === urlUsername) {
     return (

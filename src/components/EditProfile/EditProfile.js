@@ -48,6 +48,7 @@ import {
   SN_YOUTUBE_USER_LABEL,
   SN_FACEBOOK_USER_LABEL,
   FIELD_SN_USERNAME_MAX_LENGTH,
+  SS_KEY_SAVED_USER_PROFILE,
 } from '@/constants'
 import revalidatePathAction from '@/actions/revalidatePathAction'
 import getCustomTokenAction from '@/actions/getCustomTokenAction'
@@ -329,6 +330,8 @@ function BaseComponent({ userData }) {
             })
 
           dispatchRefreshAvatarData()
+
+          sessionStorage.setItem(SS_KEY_SAVED_USER_PROFILE, 'done')
 
           router.push(`/u/${userPayload.username}`)
         } else {

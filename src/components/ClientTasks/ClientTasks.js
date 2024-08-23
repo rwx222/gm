@@ -3,6 +3,7 @@ import { useEffect, Suspense } from 'react'
 import { create } from 'zustand'
 import { themeChange } from 'theme-change'
 import { usePathname, useSearchParams } from 'next/navigation'
+import { Toaster } from 'react-hot-toast'
 
 import getAvatarDataAction from '@/actions/getAvatarDataAction'
 import dispatchRefreshAvatarData from '@/utils-front/dispatchRefreshAvatarData'
@@ -75,7 +76,11 @@ function BaseComponent() {
 
   console.info(`🖥️🖥️🖥️🖥️🖥️🖥️🖥️🖥️🖥️🖥️ '${pathname}'`)
 
-  return null
+  return (
+    <div>
+      <Toaster />
+    </div>
+  )
 }
 
 export default function ClientTasks(props) {
