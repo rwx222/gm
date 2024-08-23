@@ -11,6 +11,12 @@ import formatUserData from '@/utils/formatUserData'
  *   displayName: string | null,
  *   photoURL: string | null,
  *   phoneNumber: string | null
+ *   snUserTiktok: string | null
+ *   snUserInstagram: string | null
+ *   snUserXcom: string | null
+ *   snUserSnapchat: string | null
+ *   snUserYoutube: string | null
+ *   snUserFacebook: string | null
  * }> | null>} An array of user data objects, or null if an error occurs.
  */
 export default async function getAllUsersData() {

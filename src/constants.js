@@ -7,6 +7,7 @@ export const IS_PRODUCTION = process.env.NODE_ENV === 'production'
 export const REGEX_USER_PASSWORD = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).+$/
 export const REGEX_USER_USERNAME = /^[a-z0-9_-]+$/
 export const REGEX_USER_PHONE = /^\+?[1-9]\d{1,14}$/
+export const REGEX_SN_USERNAME = /^[^\s]*$/
 
 export const EVENT_REFRESH_AVATAR_DATA = 'CUSTOM_EVENT_REFRESH_AVATAR_DATA_KEY'
 export const EVENT_SIGN_OUT_SIGNAL = 'CUSTOM_EVENT_SIGNING_OUT_SIGNAL_KEY'
@@ -28,6 +29,7 @@ export const FIELD_USERNAME_MIN_LENGTH = 1
 export const FIELD_USERNAME_MAX_LENGTH = 30
 export const FIELD_PHONE_MIN_LENGTH = 6
 export const FIELD_PHONE_MAX_LENGTH = 16
+export const FIELD_SN_USERNAME_MAX_LENGTH = 100
 
 // custom errors
 export const ERROR_CODE_INVALID_CSRF = 'middleware/invalid-csrf-token'
@@ -55,3 +57,22 @@ export const RECAPTCHA_MIN_SCORE = 0.6
 export const PROVIDER_ID_EMAIL_AND_PASSWORD = 'password'
 export const PROVIDER_ID_GOOGLE = 'google.com'
 export const PROVIDER_ID_FACEBOOK = 'facebook.com'
+
+// social networks
+export const SN_TIKTOK_USER_LINK = 'https://www.tiktok.com/@'
+export const SN_TIKTOK_USER_LABEL = 'tiktok.com/@'
+
+export const SN_INSTAGRAM_USER_LINK = 'https://www.instagram.com/'
+export const SN_INSTAGRAM_USER_LABEL = 'instagram.com/'
+
+export const SN_X_USER_LINK = 'https://x.com/'
+export const SN_X_USER_LABEL = 'x.com/'
+
+export const SN_SNAPCHAT_USER_LINK = 'https://www.snapchat.com/add/'
+export const SN_SNAPCHAT_USER_LABEL = 'snapchat.com/add/'
+
+export const SN_YOUTUBE_USER_LINK = 'https://www.youtube.com/@'
+export const SN_YOUTUBE_USER_LABEL = 'youtube.com/@'
+
+export const SN_FACEBOOK_USER_LINK = 'https://www.facebook.com/'
+export const SN_FACEBOOK_USER_LABEL = 'facebook.com/'

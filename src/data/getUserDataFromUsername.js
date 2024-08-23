@@ -12,6 +12,12 @@ import formatUserData from '@/utils/formatUserData'
  *   displayName: string | null,
  *   photoURL: string | null,
  *   phoneNumber: string | null
+ *   snUserTiktok: string | null
+ *   snUserInstagram: string | null
+ *   snUserXcom: string | null
+ *   snUserSnapchat: string | null
+ *   snUserYoutube: string | null
+ *   snUserFacebook: string | null
  * } | null>} A Promise that resolves to the user data if found, or null if not found.
  */
 export default async function getUserDataFromUsername(username) {

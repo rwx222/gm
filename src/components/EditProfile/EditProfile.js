@@ -34,22 +34,36 @@ import ImageCompressor from 'js-image-compressor'
 import {
   REGEX_USER_PHONE,
   REGEX_USER_USERNAME,
+  REGEX_SN_USERNAME,
   FIELD_PHONE_MAX_LENGTH,
   FIELD_NAME_MIN_LENGTH,
   FIELD_NAME_MAX_LENGTH,
   FIELD_USERNAME_MIN_LENGTH,
   FIELD_USERNAME_MAX_LENGTH,
   EVENT_SIGN_OUT_SIGNAL,
+  SN_TIKTOK_USER_LABEL,
+  SN_INSTAGRAM_USER_LABEL,
+  SN_X_USER_LABEL,
+  SN_SNAPCHAT_USER_LABEL,
+  SN_YOUTUBE_USER_LABEL,
+  SN_FACEBOOK_USER_LABEL,
+  FIELD_SN_USERNAME_MAX_LENGTH,
 } from '@/constants'
 import revalidatePathAction from '@/actions/revalidatePathAction'
 import getCustomTokenAction from '@/actions/getCustomTokenAction'
 import firebaseConfig from '@/data/firebaseConfig'
 import EmailIcon from '@/icons/EmailIcon'
-import ChevronsLeftRightEllipsisIcon from '@/icons/ChevronsLeftRightEllipsisIcon'
+import AtSignIcon from '@/icons/AtSignIcon'
 import Trash2Icon from '@/icons/Trash2Icon'
 import IdCardIcon from '@/icons/IdCardIcon'
 import ImageIcon from '@/icons/ImageIcon'
 import SmartphoneIcon from '@/icons/SmartphoneIcon'
+import FaTiktokIcon from '@/icons/FaTiktokIcon'
+import FaInstagramIcon from '@/icons/FaInstagramIcon'
+import FaXIcon from '@/icons/FaXIcon'
+import FaSnapchatIcon from '@/icons/FaSnapchatIcon'
+import FaYoutubeIcon from '@/icons/FaYoutubeIcon'
+import FaFacebookIcon from '@/icons/FaFacebookIcon'
 import FieldErrorLabel from '@/ui/FieldErrorLabel'
 import BasicModalDialog from '@/ui/BasicModalDialog'
 import getAvatarUrlFromName from '@/utils/getAvatarUrlFromName'
@@ -80,6 +94,54 @@ const schema = yup
       .min(FIELD_USERNAME_MIN_LENGTH, 'Mínimo ${min} caracteres')
       .max(FIELD_USERNAME_MAX_LENGTH, 'Máximo ${max} caracteres')
       .matches(REGEX_USER_USERNAME, 'Ejemplo: titor_1-2'),
+    snUserTiktok: yup
+      .string()
+      .trim()
+      .max(FIELD_SN_USERNAME_MAX_LENGTH, 'Máximo ${max} caracteres')
+      .matches(REGEX_SN_USERNAME, {
+        message: 'Sin espacios',
+        excludeEmptyString: true,
+      }),
+    snUserInstagram: yup
+      .string()
+      .trim()
+      .max(FIELD_SN_USERNAME_MAX_LENGTH, 'Máximo ${max} caracteres')
+      .matches(REGEX_SN_USERNAME, {
+        message: 'Sin espacios',
+        excludeEmptyString: true,
+      }),
+    snUserXcom: yup
+      .string()
+      .trim()
+      .max(FIELD_SN_USERNAME_MAX_LENGTH, 'Máximo ${max} caracteres')
+      .matches(REGEX_SN_USERNAME, {
+        message: 'Sin espacios',
+        excludeEmptyString: true,
+      }),
+    snUserSnapchat: yup
+      .string()
+      .trim()
+      .max(FIELD_SN_USERNAME_MAX_LENGTH, 'Máximo ${max} caracteres')
+      .matches(REGEX_SN_USERNAME, {
+        message: 'Sin espacios',
+        excludeEmptyString: true,
+      }),
+    snUserYoutube: yup
+      .string()
+      .trim()
+      .max(FIELD_SN_USERNAME_MAX_LENGTH, 'Máximo ${max} caracteres')
+      .matches(REGEX_SN_USERNAME, {
+        message: 'Sin espacios',
+        excludeEmptyString: true,
+      }),
+    snUserFacebook: yup
+      .string()
+      .trim()
+      .max(FIELD_SN_USERNAME_MAX_LENGTH, 'Máximo ${max} caracteres')
+      .matches(REGEX_SN_USERNAME, {
+        message: 'Sin espacios',
+        excludeEmptyString: true,
+      }),
   })
   .required()
 
@@ -100,7 +162,7 @@ function BaseComponent({ userData }) {
 
   const [isLoading, setIsLoading] = useState(false)
   const [signingInBackground, setSigningInBackground] = useState(false)
-  const [originUrl, setOriginUrl] = useState('')
+  const [hostUrl, setHostUrl] = useState('')
   const [tempImageUrlToCrop, setTempImageUrlToCrop] = useState('')
   const [zoom, setZoom] = useState(1)
   const [crop, setCrop] = useState({ x: 0, y: 0 })
@@ -121,10 +183,22 @@ function BaseComponent({ userData }) {
       displayName: userData?.displayName ?? '',
       phoneNumber: userData?.phoneNumber ?? '',
       username: userData?.username ?? '',
+      snUserTiktok: userData?.snUserTiktok ?? '',
+      snUserInstagram: userData?.snUserInstagram ?? '',
+      snUserXcom: userData?.snUserXcom ?? '',
+      snUserSnapchat: userData?.snUserSnapchat ?? '',
+      snUserYoutube: userData?.snUserYoutube ?? '',
+      snUserFacebook: userData?.snUserFacebook ?? '',
     },
   })
   const usernameFieldValue = watch('username')
   const photoURLFieldValue = watch('photoURL')
+  const snUserTiktokFieldValue = watch('snUserTiktok')
+  const snUserInstagramFieldValue = watch('snUserInstagram')
+  const snUserXcomFieldValue = watch('snUserXcom')
+  const snUserSnapchatFieldValue = watch('snUserSnapchat')
+  const snUserYoutubeFieldValue = watch('snUserYoutube')
+  const snUserFacebookFieldValue = watch('snUserFacebook')
 
   const isPhotoInForm = isNonEmptyString(photoURLFieldValue)
   const profilePhotoPreview = isPhotoInForm
@@ -170,7 +244,7 @@ function BaseComponent({ userData }) {
       }
     })
 
-    setOriginUrl(window.location.origin)
+    setHostUrl(window.location.host)
 
     return () => {
       unsubscribe()
@@ -202,20 +276,27 @@ function BaseComponent({ userData }) {
           (foundUids.length === 1 && foundUids[0] === uid)
         ) {
           let photoURL = formData.photoURL
-          const profilePhotoRef = ref(
-            storageRef.current,
-            'user/' + uid + '/profile/photo.jpg'
-          )
+
           if (croppedImageBlobRef.current) {
+            const profilePhotoRef = ref(
+              storageRef.current,
+              'user/' + uid + '/profile/photo.jpg'
+            )
             await uploadBytes(profilePhotoRef, croppedImageBlobRef.current)
             photoURL = await getDownloadURL(profilePhotoRef)
           }
 
           const userPayload = {
             photoURL,
-            username: formData.username,
             displayName: formData.displayName,
+            username: formData.username,
             phoneNumber: formData.phoneNumber,
+            snUserTiktok: formData.snUserTiktok,
+            snUserInstagram: formData.snUserInstagram,
+            snUserXcom: formData.snUserXcom,
+            snUserSnapchat: formData.snUserSnapchat,
+            snUserYoutube: formData.snUserYoutube,
+            snUserFacebook: formData.snUserFacebook,
           }
 
           const userDocRef = doc(dbRef.current, 'users', uid)
@@ -233,13 +314,19 @@ function BaseComponent({ userData }) {
           }
           addDoc(collection(dbRef.current, 'log_users'), logPayload)
             .then(() => true)
-            .catch(console.error)
+            .catch((error) => {
+              console.error(error)
+              console.error(`💥> ALU '${error?.message}'`)
+            })
 
           await setDoc(userDocRef, userPayload, { merge: true })
 
           await revalidatePathAction(`/u/${userData?.username}`)
             .then(() => true)
-            .catch(console.error)
+            .catch((error) => {
+              console.error(error)
+              console.error(`💥> RPA '${error?.message}'`)
+            })
 
           dispatchRefreshAvatarData()
 
@@ -250,7 +337,7 @@ function BaseComponent({ userData }) {
             'username',
             {
               type: 'custom',
-              message: 'Este link no esta disponible',
+              message: 'Username no disponible',
             },
             {
               shouldFocus: true,
@@ -360,11 +447,11 @@ function BaseComponent({ userData }) {
                 }
               )}
             >
-              <IdCardIcon width='16' height='16' />
+              <IdCardIcon className='text-primary' />
               <input
                 type='text'
                 className='grow'
-                placeholder='Nombre o Alias'
+                placeholder='* Nombre o Alias'
                 disabled={isLoading}
                 {...register('displayName')}
               />
@@ -372,6 +459,40 @@ function BaseComponent({ userData }) {
             {errors?.displayName && (
               <FieldErrorLabel>{errors?.displayName?.message}</FieldErrorLabel>
             )}
+          </div>
+
+          <div>
+            <FieldUrlLabel>
+              {hostUrl && (
+                <>
+                  <span className='font-normal'>{hostUrl + '/u/'}</span>
+                  {usernameFieldValue.toLowerCase()}
+                </>
+              )}
+            </FieldUrlLabel>
+            <div className='mb-5'>
+              <label
+                className={classNames(
+                  'input input-bordered flex items-center gap-2',
+                  {
+                    'input-primary': !errors?.username,
+                    'input-error': errors?.username,
+                  }
+                )}
+              >
+                <AtSignIcon className='text-primary' />
+                <input
+                  type='text'
+                  className='grow'
+                  placeholder='* Username'
+                  disabled={isLoading}
+                  {...register('username')}
+                />
+              </label>
+              {errors?.username && (
+                <FieldErrorLabel>{errors?.username?.message}</FieldErrorLabel>
+              )}
+            </div>
           </div>
 
           <div className='mb-5'>
@@ -384,7 +505,7 @@ function BaseComponent({ userData }) {
                 }
               )}
             >
-              <SmartphoneIcon width='16' height='16' />
+              <SmartphoneIcon />
               <input
                 type='text'
                 className='grow'
@@ -398,38 +519,200 @@ function BaseComponent({ userData }) {
             )}
           </div>
 
-          <div className='pb-1 text-xs sm:text-base min-h-5 sm:min-h-7 font-semibold w-full whitespace-nowrap overflow-hidden overflow-ellipsis'>
-            {originUrl && (
-              <>
-                {originUrl + '/u/'}
-                <span className='font-normal'>
-                  {usernameFieldValue.toLowerCase()}
-                </span>
-              </>
-            )}
-          </div>
           <div className='mb-5'>
-            <label
-              className={classNames(
-                'input input-bordered flex items-center gap-2',
-                {
-                  'input-primary': !errors?.username,
-                  'input-error': errors?.username,
-                }
+            <p className='font-normal text-lg leading-5 italic'>
+              {`Puedes añadir tus redes sociales a tu perfil. Solo se mostrarán las que completes.`}
+            </p>
+          </div>
+
+          <div>
+            <FieldUrlLabel>
+              <span className='font-normal'>{SN_TIKTOK_USER_LABEL}</span>
+              {snUserTiktokFieldValue}
+            </FieldUrlLabel>
+            <div className='mb-5'>
+              <label
+                className={classNames(
+                  'input input-bordered flex items-center gap-2',
+                  {
+                    'input-primary': !errors?.snUserTiktok,
+                    'input-error': errors?.snUserTiktok,
+                  }
+                )}
+              >
+                <FaTiktokIcon height='20' />
+                <input
+                  type='text'
+                  className='grow'
+                  placeholder=''
+                  disabled={isLoading}
+                  {...register('snUserTiktok')}
+                />
+              </label>
+              {errors?.snUserTiktok && (
+                <FieldErrorLabel>
+                  {errors?.snUserTiktok?.message}
+                </FieldErrorLabel>
               )}
-            >
-              <ChevronsLeftRightEllipsisIcon width='16' height='16' />
-              <input
-                type='text'
-                className='grow'
-                placeholder='Link de mi perfil'
-                disabled={isLoading}
-                {...register('username')}
-              />
-            </label>
-            {errors?.username && (
-              <FieldErrorLabel>{errors?.username?.message}</FieldErrorLabel>
-            )}
+            </div>
+          </div>
+
+          <div>
+            <FieldUrlLabel>
+              <span className='font-normal'>{SN_INSTAGRAM_USER_LABEL}</span>
+              {snUserInstagramFieldValue}
+            </FieldUrlLabel>
+            <div className='mb-5'>
+              <label
+                className={classNames(
+                  'input input-bordered flex items-center gap-2',
+                  {
+                    'input-primary': !errors?.snUserInstagram,
+                    'input-error': errors?.snUserInstagram,
+                  }
+                )}
+              >
+                <FaInstagramIcon height='20' />
+                <input
+                  type='text'
+                  className='grow'
+                  placeholder=''
+                  disabled={isLoading}
+                  {...register('snUserInstagram')}
+                />
+              </label>
+              {errors?.snUserInstagram && (
+                <FieldErrorLabel>
+                  {errors?.snUserInstagram?.message}
+                </FieldErrorLabel>
+              )}
+            </div>
+          </div>
+
+          <div>
+            <FieldUrlLabel>
+              <span className='font-normal'>{SN_X_USER_LABEL}</span>
+              {snUserXcomFieldValue}
+            </FieldUrlLabel>
+            <div className='mb-5'>
+              <label
+                className={classNames(
+                  'input input-bordered flex items-center gap-2',
+                  {
+                    'input-primary': !errors?.snUserXcom,
+                    'input-error': errors?.snUserXcom,
+                  }
+                )}
+              >
+                <FaXIcon width='20' />
+                <input
+                  type='text'
+                  className='grow'
+                  placeholder=''
+                  disabled={isLoading}
+                  {...register('snUserXcom')}
+                />
+              </label>
+              {errors?.snUserXcom && (
+                <FieldErrorLabel>{errors?.snUserXcom?.message}</FieldErrorLabel>
+              )}
+            </div>
+          </div>
+
+          <div>
+            <FieldUrlLabel>
+              <span className='font-normal'>{SN_SNAPCHAT_USER_LABEL}</span>
+              {snUserSnapchatFieldValue}
+            </FieldUrlLabel>
+            <div className='mb-5'>
+              <label
+                className={classNames(
+                  'input input-bordered flex items-center gap-2',
+                  {
+                    'input-primary': !errors?.snUserSnapchat,
+                    'input-error': errors?.snUserSnapchat,
+                  }
+                )}
+              >
+                <FaSnapchatIcon width='20' />
+                <input
+                  type='text'
+                  className='grow'
+                  placeholder=''
+                  disabled={isLoading}
+                  {...register('snUserSnapchat')}
+                />
+              </label>
+              {errors?.snUserSnapchat && (
+                <FieldErrorLabel>
+                  {errors?.snUserSnapchat?.message}
+                </FieldErrorLabel>
+              )}
+            </div>
+          </div>
+
+          <div>
+            <FieldUrlLabel>
+              <span className='font-normal'>{SN_YOUTUBE_USER_LABEL}</span>
+              {snUserYoutubeFieldValue}
+            </FieldUrlLabel>
+            <div className='mb-5'>
+              <label
+                className={classNames(
+                  'input input-bordered flex items-center gap-2',
+                  {
+                    'input-primary': !errors?.snUserYoutube,
+                    'input-error': errors?.snUserYoutube,
+                  }
+                )}
+              >
+                <FaYoutubeIcon width='20' />
+                <input
+                  type='text'
+                  className='grow'
+                  placeholder=''
+                  disabled={isLoading}
+                  {...register('snUserYoutube')}
+                />
+              </label>
+              {errors?.snUserYoutube && (
+                <FieldErrorLabel>
+                  {errors?.snUserYoutube?.message}
+                </FieldErrorLabel>
+              )}
+            </div>
+          </div>
+
+          <div>
+            <FieldUrlLabel>
+              <span className='font-normal'>{SN_FACEBOOK_USER_LABEL}</span>
+              {snUserFacebookFieldValue}
+            </FieldUrlLabel>
+            <div className='mb-5'>
+              <label
+                className={classNames(
+                  'input input-bordered flex items-center gap-2',
+                  {
+                    'input-primary': !errors?.snUserFacebook,
+                    'input-error': errors?.snUserFacebook,
+                  }
+                )}
+              >
+                <FaFacebookIcon height='20' />
+                <input
+                  type='text'
+                  className='grow'
+                  placeholder=''
+                  disabled={isLoading}
+                  {...register('snUserFacebook')}
+                />
+              </label>
+              {errors?.snUserFacebook && (
+                <FieldErrorLabel>
+                  {errors?.snUserFacebook?.message}
+                </FieldErrorLabel>
+              )}
+            </div>
           </div>
 
           <div className='mb-5'>
@@ -442,7 +725,7 @@ function BaseComponent({ userData }) {
                 }
               )}
             >
-              <EmailIcon width='16' height='16' />
+              <EmailIcon />
               <input
                 type='email'
                 className='grow'
@@ -590,5 +873,13 @@ const ModalsSection = ({ children }) => {
 
       {children}
     </section>
+  )
+}
+
+const FieldUrlLabel = ({ children }) => {
+  return (
+    <div className='pb-1 text-xs xs:text-base min-h-5 sm:min-h-7 font-semibold w-full whitespace-nowrap overflow-hidden overflow-ellipsis'>
+      {children}
+    </div>
   )
 }

@@ -156,11 +156,11 @@ function BaseComponent() {
                     }
                   )}
                 >
-                  <EmailIcon width='16' height='16' />
+                  <EmailIcon className='text-accent' />
                   <input
                     type='email'
                     className='grow'
-                    placeholder='Email'
+                    placeholder='* Email'
                     {...register('email')}
                   />
                 </label>

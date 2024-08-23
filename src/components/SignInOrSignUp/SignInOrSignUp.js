@@ -435,11 +435,11 @@ function BaseComponent() {
                   }
                 )}
               >
-                <EmailIcon width='16' height='16' />
+                <EmailIcon className='text-primary' />
                 <input
                   type='email'
                   className='grow'
-                  placeholder='Email'
+                  placeholder='* Email'
                   defaultValue={urlEmail}
                   disabled={isAuthenticating}
                   {...registerIn('email')}
@@ -461,14 +461,14 @@ function BaseComponent() {
                 )}
               >
                 {showPasswd ? (
-                  <LockOpenIcon width='16' height='16' />
+                  <LockOpenIcon className='text-primary' />
                 ) : (
-                  <LockIcon width='16' height='16' />
+                  <LockIcon className='text-primary' />
                 )}
                 <input
                   type={showPasswd ? 'text' : 'password'}
                   className='grow'
-                  placeholder='Contraseña'
+                  placeholder='* Contraseña'
                   disabled={isAuthenticating}
                   {...registerIn('password')}
                 />
@@ -536,11 +536,11 @@ function BaseComponent() {
                   }
                 )}
               >
-                <IdCardIcon width='16' height='16' />
+                <IdCardIcon className='text-secondary' />
                 <input
                   type='text'
                   className='grow'
-                  placeholder='Nombre o Alias'
+                  placeholder='* Nombre o Alias'
                   disabled={isAuthenticating}
                   {...registerUp('name')}
                 />
@@ -560,11 +560,11 @@ function BaseComponent() {
                   }
                 )}
               >
-                <EmailIcon width='16' height='16' />
+                <EmailIcon className='text-secondary' />
                 <input
                   type='email'
                   className='grow'
-                  placeholder='Email'
+                  placeholder='* Email'
                   disabled={isAuthenticating}
                   {...registerUp('email')}
                 />
@@ -585,14 +585,14 @@ function BaseComponent() {
                 )}
               >
                 {showPasswd ? (
-                  <LockOpenIcon width='16' height='16' />
+                  <LockOpenIcon className='text-secondary' />
                 ) : (
-                  <LockIcon width='16' height='16' />
+                  <LockIcon className='text-secondary' />
                 )}
                 <input
                   type={showPasswd ? 'text' : 'password'}
                   className='grow'
-                  placeholder='Contraseña'
+                  placeholder='* Contraseña'
                   disabled={isAuthenticating}
                   {...registerUp('password', {
                     minLength: 8,

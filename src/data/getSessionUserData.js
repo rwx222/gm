@@ -14,6 +14,12 @@ import formatUserData from '@/utils/formatUserData'
  *   displayName: string | null,
  *   photoURL: string | null,
  *   phoneNumber: string | null
+ *   snUserTiktok: string | null
+ *   snUserInstagram: string | null
+ *   snUserXcom: string | null
+ *   snUserSnapchat: string | null
+ *   snUserYoutube: string | null
+ *   snUserFacebook: string | null
  * } | null>} User data object, or null if the session cookie is not valid or if an error occurs.
  */
 export default async function getSessionUserData() {

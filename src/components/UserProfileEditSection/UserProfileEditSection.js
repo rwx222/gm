@@ -13,7 +13,7 @@ function BaseComponent({ urlUsername }) {
       <section className='pb-3 text-center'>
         <Link
           href={PATH_EDIT_PROFILE}
-          className='btn btn-neutral btn-sm btn-wide text-lg font-medium'
+          className='btn btn-neutral btn-wide text-lg font-medium'
         >
           {`Editar`}
         </Link>

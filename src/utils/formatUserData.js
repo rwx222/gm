@@ -10,6 +10,12 @@
  *   displayName: string | null,
  *   photoURL: string | null,
  *   phoneNumber: string | null
+ *   snUserTiktok: string | null
+ *   snUserInstagram: string | null
+ *   snUserXcom: string | null
+ *   snUserSnapchat: string | null
+ *   snUserYoutube: string | null
+ *   snUserFacebook: string | null
  * }} A formatted user data object.
  */
 export default function formatUserData(uid, userData) {
@@ -20,5 +26,11 @@ export default function formatUserData(uid, userData) {
     displayName: userData?.displayName,
     photoURL: userData?.photoURL,
     phoneNumber: userData?.phoneNumber,
+    snUserTiktok: userData?.snUserTiktok,
+    snUserInstagram: userData?.snUserInstagram,
+    snUserXcom: userData?.snUserXcom,
+    snUserSnapchat: userData?.snUserSnapchat,
+    snUserYoutube: userData?.snUserYoutube,
+    snUserFacebook: userData?.snUserFacebook,
   }
 }
