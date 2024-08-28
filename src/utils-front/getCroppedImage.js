@@ -12,7 +12,7 @@ const createImage = (url) => {
 /**
  * This function was adapted from the one in the ReadMe of https://github.com/DominicTobias/react-image-crop
  * @param {File} image - Image File url
- * @param {Object} croppedAreaObj - croppedAreaObj Object provided by react-easy-crop
+ * @param {object} croppedAreaObj - croppedAreaObj Object provided by react-easy-crop
  * @param {string} asBase64 - If true, the returned value will be a base64 string
  * @returns {Promise<string | Blob>}
  */

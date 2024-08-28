@@ -61,6 +61,8 @@ We use [reCaptcha v3](https://developers.google.com/recaptcha/docs/v3) to valida
 We use `react-hot-toast` and this is the standard way to show a toast by type.
 
 ```js
+import toast from 'react-hot-toast'
+
 toast.success('Hello world!', {
   duration: 5000,
   className: '!bg-success !text-success-content',
