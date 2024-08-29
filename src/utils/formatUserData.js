@@ -6,11 +6,11 @@ import { omit } from 'ramda'
  * @param {string} uid - The unique identifier of the user.
  * @param {object} userData - The raw user data object.
  * @return {{
- *   uid: string,
- *   email: string,
- *   username: string,
- *   displayName: string | null,
- *   photoURL: string | null,
+ *   uid: string
+ *   email: string
+ *   username: string
+ *   displayName: string | null
+ *   photoURL: string | null
  *   phoneNumber: string | null
  *   snUserTiktok: string | null
  *   snUserInstagram: string | null

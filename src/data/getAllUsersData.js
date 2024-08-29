@@ -5,11 +5,11 @@ import formatUserData from '@/utils/formatUserData'
  * Retrieves all user data from the 'users' collection in the DB.
  *
  * @return {Promise<Array<{
- *   uid: string,
- *   email: string,
- *   username: string,
- *   displayName: string | null,
- *   photoURL: string | null,
+ *   uid: string
+ *   email: string
+ *   username: string
+ *   displayName: string | null
+ *   photoURL: string | null
  *   phoneNumber: string | null
  *   snUserTiktok: string | null
  *   snUserInstagram: string | null

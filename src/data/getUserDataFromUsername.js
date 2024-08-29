@@ -6,11 +6,11 @@ import formatUserData from '@/utils/formatUserData'
  *
  * @param {string} username - The username of the user.
  * @return {Promise<{
- *   uid: string,
- *   email: string,
- *   username: string,
- *   displayName: string | null,
- *   photoURL: string | null,
+ *   uid: string
+ *   email: string
+ *   username: string
+ *   displayName: string | null
+ *   photoURL: string | null
  *   phoneNumber: string | null
  *   snUserTiktok: string | null
  *   snUserInstagram: string | null

@@ -8,11 +8,11 @@ import formatUserData from '@/utils/formatUserData'
  * Retrieves current session user data from the DB, based on the session cookie.
  *
  * @return {Promise<{
- *   uid: string,
- *   email: string,
- *   username: string,
- *   displayName: string | null,
- *   photoURL: string | null,
+ *   uid: string
+ *   email: string
+ *   username: string
+ *   displayName: string | null
+ *   photoURL: string | null
  *   phoneNumber: string | null
  *   snUserTiktok: string | null
  *   snUserInstagram: string | null
