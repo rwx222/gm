@@ -6,6 +6,7 @@ import * as yup from 'yup'
 import { yupResolver } from '@hookform/resolvers/yup'
 import { useForm } from 'react-hook-form'
 import classNames from 'classnames'
+import { keys, pick } from 'ramda'
 import { isNonEmptyString } from 'ramda-adjunct'
 import Cropper from 'react-easy-crop'
 import { initializeApp } from 'firebase/app'
@@ -67,6 +68,7 @@ import FaYoutubeIcon from '@/icons/FaYoutubeIcon'
 import FaFacebookIcon from '@/icons/FaFacebookIcon'
 import FieldErrorLabel from '@/ui/FieldErrorLabel'
 import BasicModalDialog from '@/ui/BasicModalDialog'
+import FieldLabel from '@/ui/FieldLabel'
 import getAvatarUrlFromName from '@/utils/getAvatarUrlFromName'
 import getCroppedImage from '@/utils-front/getCroppedImage'
 import dispatchRefreshAvatarData from '@/utils-front/dispatchRefreshAvatarData'
@@ -153,7 +155,7 @@ const MODAL_ID_UNKNOWN_ERROR = 'edit_profile_unknown_error_modal_id'
 const MODAL_ID_USER_PHOTO_MAX_SIZE_ERROR = 'user_photo_max_size_error_modal_id'
 const MODAL_ID_BACKGROUND_SIGN_IN_ERROR = 'blsiwct_error_modal_id'
 
-function BaseComponent({ userData }) {
+function BaseComponent({ userData, skills, skillsDefaultValues }) {
   const allowBackgroundSignIn = useRef(true)
   const authRef = useRef(null)
   const dbRef = useRef(null)
@@ -190,6 +192,7 @@ function BaseComponent({ userData }) {
       snUserSnapchat: userData?.snUserSnapchat ?? '',
       snUserYoutube: userData?.snUserYoutube ?? '',
       snUserFacebook: userData?.snUserFacebook ?? '',
+      ...skillsDefaultValues,
     },
   })
   const usernameFieldValue = watch('username')
@@ -287,17 +290,25 @@ function BaseComponent({ userData }) {
             photoURL = await getDownloadURL(profilePhotoRef)
           }
 
+          const skillsKeys = keys(skillsDefaultValues)
+          const formValues = pick(
+            [
+              'displayName',
+              'username',
+              'phoneNumber',
+              'snUserTiktok',
+              'snUserInstagram',
+              'snUserXcom',
+              'snUserSnapchat',
+              'snUserYoutube',
+              'snUserFacebook',
+              ...skillsKeys,
+            ],
+            formData
+          )
           const userPayload = {
+            ...formValues,
             photoURL,
-            displayName: formData.displayName,
-            username: formData.username,
-            phoneNumber: formData.phoneNumber,
-            snUserTiktok: formData.snUserTiktok,
-            snUserInstagram: formData.snUserInstagram,
-            snUserXcom: formData.snUserXcom,
-            snUserSnapchat: formData.snUserSnapchat,
-            snUserYoutube: formData.snUserYoutube,
-            snUserFacebook: formData.snUserFacebook,
           }
 
           const userDocRef = doc(dbRef.current, 'users', uid)
@@ -354,7 +365,7 @@ function BaseComponent({ userData }) {
         setIsLoading(false)
       }
     },
-    [router, setError, userData?.uid, userData?.username]
+    [router, setError, skillsDefaultValues, userData?.uid, userData?.username]
   )
 
   const removePreviewPhoto = useCallback(() => {
@@ -400,7 +411,7 @@ function BaseComponent({ userData }) {
 
   return (
     <div className='relative pb-10'>
-      <section className='flex justify-center items-center gap-3 pt-3 pb-5'>
+      <section className='flex justify-center items-center gap-3 py-5'>
         <button
           type='button'
           className='btn btn-circle'
@@ -465,14 +476,16 @@ function BaseComponent({ userData }) {
           </div>
 
           <div>
-            <FieldUrlLabel>
+            <FieldLabel>
               {hostUrl && (
                 <>
-                  <span className='font-normal'>{hostUrl + '/u/'}</span>
-                  {usernameFieldValue.toLowerCase()}
+                  {hostUrl + '/u/'}
+                  <span className='font-semibold'>
+                    {usernameFieldValue.toLowerCase()}
+                  </span>
                 </>
               )}
-            </FieldUrlLabel>
+            </FieldLabel>
             <div className='mb-5'>
               <label
                 className={classNames(
@@ -522,6 +535,31 @@ function BaseComponent({ userData }) {
             )}
           </div>
 
+          {skills.map((skill) => {
+            const formSkillValue = watch(skill?.key)
+
+            return (
+              <div className='mb-5' key={skill?.uid}>
+                <FieldLabel>
+                  {`${skill?.name}: `}
+                  <span className='font-semibold'>{formSkillValue}</span>
+                </FieldLabel>
+                <input
+                  type='range'
+                  min={0}
+                  max={100}
+                  step={1}
+                  disabled={isLoading}
+                  value={formSkillValue}
+                  onChange={(e) => {
+                    setValue(skill?.key, Number(e.target.value))
+                  }}
+                  className='range range-xs range-primary'
+                />
+              </div>
+            )
+          })}
+
           <div className='mb-5'>
             <p className='font-normal text-lg leading-5 italic'>
               {`Puedes añadir tus redes sociales a tu perfil. Solo se mostrarán las que completes.`}
@@ -529,10 +567,10 @@ function BaseComponent({ userData }) {
           </div>
 
           <div>
-            <FieldUrlLabel>
-              <span className='font-normal'>{SN_TIKTOK_USER_LABEL}</span>
-              {snUserTiktokFieldValue}
-            </FieldUrlLabel>
+            <FieldLabel>
+              {SN_TIKTOK_USER_LABEL}
+              <span className='font-semibold'>{snUserTiktokFieldValue}</span>
+            </FieldLabel>
             <div className='mb-5'>
               <label
                 className={classNames(
@@ -561,10 +599,10 @@ function BaseComponent({ userData }) {
           </div>
 
           <div>
-            <FieldUrlLabel>
-              <span className='font-normal'>{SN_INSTAGRAM_USER_LABEL}</span>
-              {snUserInstagramFieldValue}
-            </FieldUrlLabel>
+            <FieldLabel>
+              {SN_INSTAGRAM_USER_LABEL}
+              <span className='font-semibold'>{snUserInstagramFieldValue}</span>
+            </FieldLabel>
             <div className='mb-5'>
               <label
                 className={classNames(
@@ -593,10 +631,10 @@ function BaseComponent({ userData }) {
           </div>
 
           <div>
-            <FieldUrlLabel>
-              <span className='font-normal'>{SN_X_USER_LABEL}</span>
-              {snUserXcomFieldValue}
-            </FieldUrlLabel>
+            <FieldLabel>
+              {SN_X_USER_LABEL}
+              <span className='font-semibold'>{snUserXcomFieldValue}</span>
+            </FieldLabel>
             <div className='mb-5'>
               <label
                 className={classNames(
@@ -623,10 +661,10 @@ function BaseComponent({ userData }) {
           </div>
 
           <div>
-            <FieldUrlLabel>
-              <span className='font-normal'>{SN_SNAPCHAT_USER_LABEL}</span>
-              {snUserSnapchatFieldValue}
-            </FieldUrlLabel>
+            <FieldLabel>
+              {SN_SNAPCHAT_USER_LABEL}
+              <span className='font-semibold'>{snUserSnapchatFieldValue}</span>
+            </FieldLabel>
             <div className='mb-5'>
               <label
                 className={classNames(
@@ -655,10 +693,10 @@ function BaseComponent({ userData }) {
           </div>
 
           <div>
-            <FieldUrlLabel>
-              <span className='font-normal'>{SN_YOUTUBE_USER_LABEL}</span>
-              {snUserYoutubeFieldValue}
-            </FieldUrlLabel>
+            <FieldLabel>
+              {SN_YOUTUBE_USER_LABEL}
+              <span className='font-semibold'>{snUserYoutubeFieldValue}</span>
+            </FieldLabel>
             <div className='mb-5'>
               <label
                 className={classNames(
@@ -687,10 +725,10 @@ function BaseComponent({ userData }) {
           </div>
 
           <div>
-            <FieldUrlLabel>
-              <span className='font-normal'>{SN_FACEBOOK_USER_LABEL}</span>
-              {snUserFacebookFieldValue}
-            </FieldUrlLabel>
+            <FieldLabel>
+              {SN_FACEBOOK_USER_LABEL}
+              <span className='font-semibold'>{snUserFacebookFieldValue}</span>
+            </FieldLabel>
             <div className='mb-5'>
               <label
                 className={classNames(
@@ -876,13 +914,5 @@ const ModalsSection = ({ children }) => {
 
       {children}
     </section>
-  )
-}
-
-const FieldUrlLabel = ({ children }) => {
-  return (
-    <div className='pb-1 text-xs xs:text-base min-h-5 sm:min-h-7 font-semibold w-full whitespace-nowrap overflow-hidden overflow-ellipsis'>
-      {children}
-    </div>
   )
 }

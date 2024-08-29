@@ -1,8 +1,9 @@
 /* eslint-disable @next/next/no-img-element */
 import { notFound } from 'next/navigation'
-import { isNonEmptyString } from 'ramda-adjunct'
+import { isNonEmptyString, isValidNumber } from 'ramda-adjunct'
 import classNames from 'classnames'
 
+import getAllSkills from '@/data/getAllSkills'
 import getAllUsersData from '@/data/getAllUsersData'
 import getUserDataFromUsername from '@/data/getUserDataFromUsername'
 import getAvatarUrlFromName from '@/utils/getAvatarUrlFromName'
@@ -50,6 +51,8 @@ export default async function U({ params }) {
     notFound()
   }
 
+  const skills = (await getAllSkills()) ?? []
+
   const isThereAnySnLink =
     isNonEmptyString(userData?.snUserTiktok) ||
     isNonEmptyString(userData?.snUserInstagram) ||
@@ -64,7 +67,7 @@ export default async function U({ params }) {
 
   return (
     <main className='px-5'>
-      <section className='flex justify-center pt-3 pb-5'>
+      <section className='flex justify-center py-5'>
         <UserAvatarButton
           srcUrl={avatarUrl}
           modalId={MODAL_ID_USER_PHOTO_VIEW}
@@ -89,33 +92,22 @@ export default async function U({ params }) {
         })}
       >
         <section className='w-full max-w-96 mx-auto'>
-          <SkillItem value={20}>
-            <SkillLabel>{`Técnica: 20`}</SkillLabel>
-          </SkillItem>
+          {skills.map((skill) => {
+            const skillValue = userData?.[skill?.key] ?? 0
+            const statusName = getStatusFromNumber(skillValue)
 
-          <SkillItem value={85} className='progress-primary'>
-            <SkillLabel className='text-primary'>{`Musicalidad: 85`}</SkillLabel>
-          </SkillItem>
-
-          <SkillItem value={100} className='progress-info'>
-            <SkillLabel className='text-info'>{`Dificultad: 100`}</SkillLabel>
-          </SkillItem>
-
-          <SkillItem value={90} className='progress-warning'>
-            <SkillLabel className='text-warning'>{`Coreografía: 90`}</SkillLabel>
-          </SkillItem>
-
-          <SkillItem value={70} className='progress-error'>
-            <SkillLabel className='text-error'>{`Sincronización: 70`}</SkillLabel>
-          </SkillItem>
-
-          <SkillItem value={55} className='progress-success'>
-            <SkillLabel className='text-success'>{`Estilo: 55`}</SkillLabel>
-          </SkillItem>
-
-          <SkillItem value={40} className='progress-secondary'>
-            <SkillLabel className='text-secondary'>{`Expresión: 40`}</SkillLabel>
-          </SkillItem>
+            return (
+              <SkillItem
+                key={skill?.uid}
+                value={skillValue}
+                className={`progress-${statusName}`}
+              >
+                <SkillLabel className={`text-${statusName}`}>
+                  {skill?.name + ': ' + skillValue}
+                </SkillLabel>
+              </SkillItem>
+            )
+          })}
         </section>
 
         {isThereAnySnLink && (
@@ -197,6 +189,21 @@ export default async function U({ params }) {
       </div>
     </main>
   )
+}
+
+const getStatusFromNumber = (value) => {
+  if (isValidNumber(value) && value >= 0 && value <= 100) {
+    if (value >= 76) {
+      return 'success'
+    } else if (value >= 51) {
+      return 'info'
+    } else if (value >= 26) {
+      return 'warning'
+    } else {
+      return 'error'
+    }
+  }
+  return ''
 }
 
 const SkillLabel = ({ children, className }) => {

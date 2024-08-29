@@ -1,8 +1,10 @@
 import { redirect } from 'next/navigation'
+import { isValidNumber, isInteger } from 'ramda-adjunct'
 
+import { PATH_AUTH } from '@/constants'
 import EditProfile from '@/components/EditProfile/EditProfile'
 import getSessionUserData from '@/data/getSessionUserData'
-import { PATH_AUTH } from '@/constants'
+import getAllSkills from '@/data/getAllSkills'
 
 export const dynamic = 'force-dynamic'
 
@@ -18,9 +20,30 @@ export default async function EditProfilePage() {
     redirect(PATH_AUTH)
   }
 
+  const skills = (await getAllSkills()) ?? []
+  const skillsDefaultValues = {}
+
+  skills.forEach((skill) => {
+    const skillKey = skill?.key
+    const rawValue = userData?.[skillKey] ?? 0
+    const skillValue =
+      isValidNumber(rawValue) &&
+      isInteger(rawValue) &&
+      rawValue >= 0 &&
+      rawValue <= 100
+        ? rawValue
+        : 0
+
+    skillsDefaultValues[skillKey] = skillValue
+  })
+
   return (
     <main className='px-5'>
-      <EditProfile userData={userData} />
+      <EditProfile
+        userData={userData}
+        skills={skills}
+        skillsDefaultValues={skillsDefaultValues}
+      />
     </main>
   )
 }

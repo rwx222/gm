@@ -11,12 +11,6 @@ import getSessionUserData from '@/data/getSessionUserData'
  *   username: string,
  *   displayName: string | null,
  *   photoURL: string | null
- *   snUserTiktok: string | null
- *   snUserInstagram: string | null
- *   snUserXcom: string | null
- *   snUserSnapchat: string | null
- *   snUserYoutube: string | null
- *   snUserFacebook: string | null
  * } | null>} An object containing some user data; or null.
  */
 export default async function getAvatarDataAction() {
@@ -25,18 +19,7 @@ export default async function getAvatarDataAction() {
 
     if (rawUserData) {
       const avatarUserData = pick(
-        [
-          'uid',
-          'username',
-          'displayName',
-          'photoURL',
-          'snUserTiktok',
-          'snUserInstagram',
-          'snUserXcom',
-          'snUserSnapchat',
-          'snUserYoutube',
-          'snUserFacebook',
-        ],
+        ['uid', 'username', 'displayName', 'photoURL'],
         rawUserData
       )
       return avatarUserData

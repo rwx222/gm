@@ -5,11 +5,5 @@ export const metadata = {
 }
 
 export default function HomePage() {
-  return (
-    <main className='px-5'>
-      <header>
-        <h1>{`WORK IN PROGRESS`}</h1>
-      </header>
-    </main>
-  )
+  return <main className='px-5'></main>
 }

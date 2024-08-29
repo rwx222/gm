@@ -1,3 +1,5 @@
+import { omit } from 'ramda'
+
 /**
  * Formats user data by extracting relevant fields and returning them in a standardized object.
  *
@@ -19,18 +21,10 @@
  * }} A formatted user data object.
  */
 export default function formatUserData(uid, userData) {
-  return {
-    uid,
-    email: userData?.email,
-    username: userData?.username,
-    displayName: userData?.displayName,
-    photoURL: userData?.photoURL,
-    phoneNumber: userData?.phoneNumber,
-    snUserTiktok: userData?.snUserTiktok,
-    snUserInstagram: userData?.snUserInstagram,
-    snUserXcom: userData?.snUserXcom,
-    snUserSnapchat: userData?.snUserSnapchat,
-    snUserYoutube: userData?.snUserYoutube,
-    snUserFacebook: userData?.snUserFacebook,
-  }
+  const cleanData = omit(
+    ['createdAt', 'lastLogin', 'loginCount', 'providerData'],
+    userData
+  )
+
+  return { uid, ...cleanData }
 }

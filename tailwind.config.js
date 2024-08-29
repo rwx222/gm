@@ -31,4 +31,14 @@ module.exports = {
     darkTheme: 'dim',
     themes: ['emerald', 'dim', 'cyberpunk'],
   },
+  safelist: [
+    'progress-success',
+    'progress-info',
+    'progress-warning',
+    'progress-error',
+    'text-success',
+    'text-info',
+    'text-warning',
+    'text-error',
+  ],
 }
