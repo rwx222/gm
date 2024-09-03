@@ -26,5 +26,5 @@ export default function formatUserData(uid, userData) {
     userData
   )
 
-  return { uid, ...cleanData }
+  return { ...cleanData, uid }
 }

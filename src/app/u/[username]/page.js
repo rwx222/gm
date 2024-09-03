@@ -1,4 +1,3 @@
-/* eslint-disable @next/next/no-img-element */
 import { notFound } from 'next/navigation'
 import { isNonEmptyString, isValidNumber } from 'ramda-adjunct'
 import classNames from 'classnames'
@@ -44,7 +43,7 @@ export async function generateMetadata({ params }) {
 
 const MODAL_ID_USER_PHOTO_VIEW = 'user_photo_view_modal_id'
 
-export default async function U({ params }) {
+export default async function UPage({ params }) {
   const userData = await getUserDataFromUsername(params.username)
 
   if (!userData) {
@@ -74,7 +73,7 @@ export default async function U({ params }) {
         />
       </section>
 
-      <section className='pb-3'>
+      <header className='pb-3'>
         <h1 className='text-xl sm:text-3xl font-semibold text-center text-accent'>
           {userData?.displayName}
         </h1>
@@ -82,7 +81,7 @@ export default async function U({ params }) {
         <p className='text-center text-accent text-lg sm:text-2xl font-normal'>
           {params.username}
         </p>
-      </section>
+      </header>
 
       <UserProfileEditSection urlUsername={params.username} />
 

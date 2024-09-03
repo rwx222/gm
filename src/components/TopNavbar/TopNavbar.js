@@ -6,7 +6,7 @@ import MenuIcon from '@/icons/MenuIcon'
 
 export default function TopNavbar() {
   return (
-    <div className='navbar bg-base-100 xl:border-b xl:border-primary'>
+    <div className='navbar bg-base-100 xl:border-b xl:border-primary pr-5'>
       <div className='flex-none xl:hidden'>
         <label
           htmlFor='main-layout-drawer'

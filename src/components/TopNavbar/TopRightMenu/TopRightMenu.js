@@ -1,5 +1,4 @@
 'use client'
-/* eslint-disable @next/next/no-img-element */
 import { useCallback, useRef, useEffect, Suspense } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
@@ -7,7 +6,7 @@ import { initializeApp } from 'firebase/app'
 import { getAuth, signOut, inMemoryPersistence } from 'firebase/auth'
 import { isNonEmptyString } from 'ramda-adjunct'
 
-import { PATH_AUTH, PATH_CHANGE_THEME } from '@/constants'
+import { PATH_AUTH, PATH_CHANGE_THEME, FN_PATH_USER_PAGE } from '@/constants'
 import firebaseConfig from '@/data/firebaseConfig'
 import UserRoundIcon from '@/icons/UserRoundIcon'
 import CircleUserRoundIcon from '@/icons/CircleUserRoundIcon'
@@ -91,7 +90,7 @@ function BaseComponent() {
         <li>
           <Link
             prefetch={false}
-            href={'/u/' + avatarData?.username}
+            href={FN_PATH_USER_PAGE(avatarData?.username)}
             className={LINK_CLASSNAME}
           >
             <UserRoundIcon />

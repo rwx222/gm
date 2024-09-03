@@ -11,15 +11,15 @@ export const metadata = {
 }
 
 export default async function ChangeThemePage() {
-  const uid = await getSessionUserUid()
+  const sessionUserUid = await getSessionUserUid()
 
-  if (!uid) {
+  if (!sessionUserUid) {
     // the user is not logged in
     redirect(PATH_AUTH)
   }
 
   return (
-    <main className='px-5'>
+    <main className='p-5'>
       <section>
         <p>
           {`Por defecto tomamos el tema del sistema, pero puedes escoger otro. El que elijas se mostrará en este dispositivo.`}

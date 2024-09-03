@@ -1,5 +1,4 @@
 'use client'
-/* eslint-disable @next/next/no-img-element */
 import 'react-easy-crop/react-easy-crop.css'
 import { Suspense, useCallback, useState, useEffect, useRef } from 'react'
 import * as yup from 'yup'
@@ -8,7 +7,6 @@ import { useForm } from 'react-hook-form'
 import classNames from 'classnames'
 import { keys, pick } from 'ramda'
 import { isNonEmptyString } from 'ramda-adjunct'
-import Cropper from 'react-easy-crop'
 import { initializeApp } from 'firebase/app'
 import {
   getAuth,
@@ -21,7 +19,7 @@ import {
   addDoc,
   doc,
   getDoc,
-  setDoc,
+  updateDoc,
   collection,
   query,
   where,
@@ -30,7 +28,9 @@ import {
 } from 'firebase/firestore'
 import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage'
 import { useRouter } from 'next/navigation'
+import Cropper from 'react-easy-crop'
 import ImageCompressor from 'js-image-compressor'
+import toast from 'react-hot-toast'
 
 import {
   REGEX_USER_PHONE,
@@ -50,6 +50,7 @@ import {
   SN_FACEBOOK_USER_LABEL,
   FIELD_SN_USERNAME_MAX_LENGTH,
   SS_KEY_SAVED_USER_PROFILE,
+  FN_PATH_USER_PAGE,
 } from '@/constants'
 import revalidatePathAction from '@/actions/revalidatePathAction'
 import getCustomTokenAction from '@/actions/getCustomTokenAction'
@@ -69,6 +70,7 @@ import FaFacebookIcon from '@/icons/FaFacebookIcon'
 import FieldErrorLabel from '@/ui/FieldErrorLabel'
 import BasicModalDialog from '@/ui/BasicModalDialog'
 import FieldLabel from '@/ui/FieldLabel'
+import StandardCropperWrapper from '@/ui/StandardCropperWrapper'
 import getAvatarUrlFromName from '@/utils/getAvatarUrlFromName'
 import getCroppedImage from '@/utils-front/getCroppedImage'
 import dispatchRefreshAvatarData from '@/utils-front/dispatchRefreshAvatarData'
@@ -153,14 +155,14 @@ const UPLOAD_USER_PHOTO_INPUT_ID = 'upload_user_photo_input_id'
 const MODAL_ID_CONFIRM_DELETE_PHOTO = 'confirm_delete_photo_modal_id'
 const MODAL_ID_UNKNOWN_ERROR = 'edit_profile_unknown_error_modal_id'
 const MODAL_ID_USER_PHOTO_MAX_SIZE_ERROR = 'user_photo_max_size_error_modal_id'
-const MODAL_ID_BACKGROUND_SIGN_IN_ERROR = 'blsiwct_error_modal_id'
+const MODAL_ID_BACKGROUND_SIGN_IN_ERROR = 'blsiwct_edit_profile_error_modal_id'
 
 function BaseComponent({ userData, skills, skillsDefaultValues }) {
   const allowBackgroundSignIn = useRef(true)
   const authRef = useRef(null)
   const dbRef = useRef(null)
   const storageRef = useRef(null)
-  const croppedImageBlobRef = useRef(null)
+  const compressedCroppedImageBlobRef = useRef(null)
   const croppedAreaPixelsRef = useRef(null)
 
   const [isLoading, setIsLoading] = useState(false)
@@ -281,12 +283,15 @@ function BaseComponent({ userData, skills, skillsDefaultValues }) {
         ) {
           let photoURL = formData.photoURL
 
-          if (croppedImageBlobRef.current) {
+          if (compressedCroppedImageBlobRef.current) {
             const profilePhotoRef = ref(
               storageRef.current,
               'user/' + uid + '/profile/photo.jpg'
             )
-            await uploadBytes(profilePhotoRef, croppedImageBlobRef.current)
+            await uploadBytes(
+              profilePhotoRef,
+              compressedCroppedImageBlobRef.current
+            )
             photoURL = await getDownloadURL(profilePhotoRef)
           }
 
@@ -331,9 +336,9 @@ function BaseComponent({ userData, skills, skillsDefaultValues }) {
               console.error(`💥> ALU '${error?.message}'`)
             })
 
-          await setDoc(userDocRef, userPayload, { merge: true })
+          await updateDoc(userDocRef, userPayload)
 
-          await revalidatePathAction(`/u/${userData?.username}`)
+          await revalidatePathAction(FN_PATH_USER_PAGE(userData?.username))
             .then(() => true)
             .catch((error) => {
               console.error(error)
@@ -344,7 +349,7 @@ function BaseComponent({ userData, skills, skillsDefaultValues }) {
 
           sessionStorage.setItem(SS_KEY_SAVED_USER_PROFILE, 'done')
 
-          router.push(`/u/${userPayload.username}`)
+          router.push(FN_PATH_USER_PAGE(userPayload.username))
         } else {
           setIsLoading(false)
           setError(
@@ -369,21 +374,18 @@ function BaseComponent({ userData, skills, skillsDefaultValues }) {
   )
 
   const removePreviewPhoto = useCallback(() => {
-    croppedImageBlobRef.current = null
+    compressedCroppedImageBlobRef.current = null
     setValue('photoURL', '')
     document.getElementById(MODAL_ID_CONFIRM_DELETE_PHOTO).close()
   }, [setValue])
 
-  const cropImage = useCallback(async () => {
+  const cropAndCompressImage = useCallback(async () => {
     try {
-      croppedImageBlobRef.current = null
+      compressedCroppedImageBlobRef.current = null
       const newCroppedImageBlob = await getCroppedImage(
         tempImageUrlToCrop,
         croppedAreaPixelsRef.current
       )
-
-      croppedImageBlobRef.current = newCroppedImageBlob
-      setValue('photoURL', URL.createObjectURL(newCroppedImageBlob))
       setTempImageUrlToCrop('')
 
       const compressionOptions = {
@@ -391,10 +393,18 @@ function BaseComponent({ userData, skills, skillsDefaultValues }) {
         maxWidth: 400,
         quality: 0.9,
         success: (compressedFile) => {
-          croppedImageBlobRef.current = compressedFile
+          compressedCroppedImageBlobRef.current = compressedFile
+          setValue('photoURL', URL.createObjectURL(compressedFile))
         },
         error: (msg) => {
           console.error(`💥> CIE`, msg)
+          setValue('photoURL', '')
+
+          toast.error('Error al procesar la imagen', {
+            duration: 5000,
+            className: '!bg-error !text-error-content',
+            icon: '⛔',
+          })
         },
       }
       new ImageCompressor(compressionOptions)
@@ -423,7 +433,7 @@ function BaseComponent({ userData, skills, skillsDefaultValues }) {
             }
           }}
         >
-          <Trash2Icon />
+          <Trash2Icon width='20' height='20' />
         </button>
 
         <div className='avatar'>
@@ -445,7 +455,7 @@ function BaseComponent({ userData, skills, skillsDefaultValues }) {
             document.getElementById(UPLOAD_USER_PHOTO_INPUT_ID).click()
           }}
         >
-          <ImageIcon width='24' height='24' />
+          <ImageIcon />
         </button>
       </section>
 
@@ -454,7 +464,7 @@ function BaseComponent({ userData, skills, skillsDefaultValues }) {
           <div className='mb-5'>
             <label
               className={classNames(
-                'input input-bordered flex items-center gap-2',
+                'input input-bordered text-lg flex items-center gap-2',
                 {
                   'input-primary': !errors?.displayName,
                   'input-error': errors?.displayName,
@@ -489,7 +499,7 @@ function BaseComponent({ userData, skills, skillsDefaultValues }) {
             <div className='mb-5'>
               <label
                 className={classNames(
-                  'input input-bordered flex items-center gap-2',
+                  'input input-bordered text-lg flex items-center gap-2',
                   {
                     'input-primary': !errors?.username,
                     'input-error': errors?.username,
@@ -514,7 +524,7 @@ function BaseComponent({ userData, skills, skillsDefaultValues }) {
           <div className='mb-5'>
             <label
               className={classNames(
-                'input input-bordered flex items-center gap-2',
+                'input input-bordered text-lg flex items-center gap-2',
                 {
                   'input-primary': !errors?.phoneNumber,
                   'input-error': errors?.phoneNumber,
@@ -574,7 +584,7 @@ function BaseComponent({ userData, skills, skillsDefaultValues }) {
             <div className='mb-5'>
               <label
                 className={classNames(
-                  'input input-bordered flex items-center gap-2',
+                  'input input-bordered text-lg flex items-center gap-2',
                   {
                     'input-primary': !errors?.snUserTiktok,
                     'input-error': errors?.snUserTiktok,
@@ -606,7 +616,7 @@ function BaseComponent({ userData, skills, skillsDefaultValues }) {
             <div className='mb-5'>
               <label
                 className={classNames(
-                  'input input-bordered flex items-center gap-2',
+                  'input input-bordered text-lg flex items-center gap-2',
                   {
                     'input-primary': !errors?.snUserInstagram,
                     'input-error': errors?.snUserInstagram,
@@ -638,7 +648,7 @@ function BaseComponent({ userData, skills, skillsDefaultValues }) {
             <div className='mb-5'>
               <label
                 className={classNames(
-                  'input input-bordered flex items-center gap-2',
+                  'input input-bordered text-lg flex items-center gap-2',
                   {
                     'input-primary': !errors?.snUserXcom,
                     'input-error': errors?.snUserXcom,
@@ -668,7 +678,7 @@ function BaseComponent({ userData, skills, skillsDefaultValues }) {
             <div className='mb-5'>
               <label
                 className={classNames(
-                  'input input-bordered flex items-center gap-2',
+                  'input input-bordered text-lg flex items-center gap-2',
                   {
                     'input-primary': !errors?.snUserSnapchat,
                     'input-error': errors?.snUserSnapchat,
@@ -700,7 +710,7 @@ function BaseComponent({ userData, skills, skillsDefaultValues }) {
             <div className='mb-5'>
               <label
                 className={classNames(
-                  'input input-bordered flex items-center gap-2',
+                  'input input-bordered text-lg flex items-center gap-2',
                   {
                     'input-primary': !errors?.snUserYoutube,
                     'input-error': errors?.snUserYoutube,
@@ -732,7 +742,7 @@ function BaseComponent({ userData, skills, skillsDefaultValues }) {
             <div className='mb-5'>
               <label
                 className={classNames(
-                  'input input-bordered flex items-center gap-2',
+                  'input input-bordered text-lg flex items-center gap-2',
                   {
                     'input-primary': !errors?.snUserFacebook,
                     'input-error': errors?.snUserFacebook,
@@ -759,7 +769,7 @@ function BaseComponent({ userData, skills, skillsDefaultValues }) {
           <div className='mb-5'>
             <label
               className={classNames(
-                'input input-bordered flex items-center gap-2',
+                'input input-bordered text-lg flex items-center gap-2',
                 {
                   'input-primary': true,
                   'input-error': false,
@@ -789,7 +799,7 @@ function BaseComponent({ userData, skills, skillsDefaultValues }) {
       </section>
 
       {isNonEmptyString(tempImageUrlToCrop) && (
-        <div className='bg-base-100 absolute top-0 bottom-0 left-0 right-0'>
+        <StandardCropperWrapper>
           <div className='absolute left-0 right-0 top-0 bottom-20'>
             <Cropper
               aspect={1}
@@ -824,12 +834,12 @@ function BaseComponent({ userData, skills, skillsDefaultValues }) {
               >{`Cancelar`}</button>
               <button
                 type='button'
-                onClick={cropImage}
+                onClick={cropAndCompressImage}
                 className='btn btn-secondary btn-sm min-w-28 xs:text-lg'
               >{`Listo`}</button>
             </div>
           </div>
-        </div>
+        </StandardCropperWrapper>
       )}
 
       <input
@@ -838,24 +848,18 @@ function BaseComponent({ userData, skills, skillsDefaultValues }) {
         className='hidden'
         accept='image/*'
         onChange={(e) => {
-          try {
-            const file = e.target.files[0]
+          const file = e.target.files[0]
 
-            if (file) {
-              const fileMaxSizeInBytes = 1024 * 1024 * USER_PHOTO_MAX_SIZE_IN_MB
+          if (file) {
+            const fileMaxSizeInBytes = 1024 * 1024 * USER_PHOTO_MAX_SIZE_IN_MB
 
-              if (file.size > fileMaxSizeInBytes) {
-                document
-                  .getElementById(MODAL_ID_USER_PHOTO_MAX_SIZE_ERROR)
-                  .showModal()
-              } else {
-                setTempImageUrlToCrop(URL.createObjectURL(file))
-              }
+            if (file.size > fileMaxSizeInBytes) {
+              document
+                .getElementById(MODAL_ID_USER_PHOTO_MAX_SIZE_ERROR)
+                .showModal()
+            } else {
+              setTempImageUrlToCrop(URL.createObjectURL(file))
             }
-          } catch (error) {
-            console.error(error)
-            console.error(`💥> FIC '${error?.message}'`)
-            document.getElementById(MODAL_ID_UNKNOWN_ERROR).showModal()
           }
         }}
       />
@@ -870,7 +874,7 @@ function BaseComponent({ userData, skills, skillsDefaultValues }) {
             <button
               type='button'
               onClick={removePreviewPhoto}
-              className='btn btn-error'
+              className='btn btn-error text-lg'
             >
               {`Si, eliminar`}
             </button>

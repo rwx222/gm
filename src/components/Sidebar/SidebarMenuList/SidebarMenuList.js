@@ -4,9 +4,11 @@ import { usePathname } from 'next/navigation'
 import { useCallback, Suspense } from 'react'
 import classNames from 'classnames'
 
-import { PATH_HOME } from '@/constants'
+import { PATH_HOME, PATH_CALENDAR } from '@/constants'
+import { useStore } from '@/components/ClientTasks/ClientTasks'
 import XIcon from '@/icons/XIcon'
-import HomeIcon from '@/icons/HomeIcon'
+import GripIcon from '@/icons/GripIcon'
+import CalendarRangeIcon from '@/icons/CalendarRangeIcon'
 
 function BaseComponent() {
   const pathname = usePathname()
@@ -15,6 +17,9 @@ function BaseComponent() {
     const drawer = document.getElementById('main-layout-drawer')
     drawer.checked = !drawer.checked
   }, [])
+
+  const avatarData = useStore((state) => state.avatarData)
+  const userIsLoggedIn = Boolean(avatarData)
 
   return (
     <ul className='menu bg-base-200 text-base-content min-h-full w-80 p-4'>
@@ -35,9 +40,22 @@ function BaseComponent() {
             active: pathname === PATH_HOME,
           })}
         >
-          <HomeIcon />
+          <GripIcon width='20' height='20' />
           {`Inicio`}
         </Link>
+
+        {userIsLoggedIn && (
+          <Link
+            href={PATH_CALENDAR}
+            onClick={toggleDrawer}
+            className={classNames('text-xl font-normal', {
+              active: pathname === PATH_CALENDAR,
+            })}
+          >
+            <CalendarRangeIcon width='20' height='20' />
+            {`Calendario`}
+          </Link>
+        )}
       </li>
     </ul>
   )

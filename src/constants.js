@@ -12,6 +12,7 @@ export const REGEX_SN_USERNAME = /^[^\s]*$/
 
 // storage keys
 export const SS_KEY_SAVED_USER_PROFILE = 'SS_KEY_SAVED_USER_PROFILE'
+export const SS_KEY_SAVED_EVENT = 'SS_KEY_SAVED_EVENT'
 
 // custom events
 export const EVENT_REFRESH_AVATAR_DATA = 'CUSTOM_EVENT_REFRESH_AVATAR_DATA_KEY'
@@ -23,6 +24,11 @@ export const PATH_HOME = '/home'
 export const PATH_FORGOT_PASSWORD = '/forgot-password'
 export const PATH_CHANGE_THEME = '/home/change-theme'
 export const PATH_EDIT_PROFILE = '/home/edit-profile'
+export const PATH_CALENDAR = '/home/calendar'
+export const PATH_CREATE_EVENT = '/home/create-event'
+export const FN_PATH_EDIT_EVENT = (uid) => '/home/edit-event/' + uid
+export const FN_PATH_EVENT_PAGE = (uid) => '/home/event/' + uid
+export const FN_PATH_USER_PAGE = (username) => '/u/' + username
 
 // reCAPTCHA
 export const RECAPTCHA_SITE_KEY = process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY

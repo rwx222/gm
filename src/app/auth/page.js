@@ -12,9 +12,9 @@ export const metadata = {
 }
 
 export default async function AuthPage() {
-  const uid = await getSessionUserUid()
+  const sessionUserUid = await getSessionUserUid()
 
-  if (uid) {
+  if (sessionUserUid) {
     // the user is already logged in
     redirect(PATH_HOME)
   }

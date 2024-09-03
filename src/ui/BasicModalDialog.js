@@ -14,7 +14,7 @@ export default function BasicModalDialog({
 
         <div className='modal-action'>
           <form method='dialog'>
-            <button type='submit' className='btn'>
+            <button type='submit' className='btn text-lg'>
               {closeText}
             </button>
           </form>

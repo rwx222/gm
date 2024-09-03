@@ -149,7 +149,7 @@ function BaseComponent() {
               <div className='mb-5'>
                 <label
                   className={classNames(
-                    'input input-bordered flex items-center gap-2',
+                    'input input-bordered text-lg flex items-center gap-2',
                     {
                       'input-accent': !errors?.email,
                       'input-error': errors?.email,

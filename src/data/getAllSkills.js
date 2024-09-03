@@ -15,7 +15,7 @@ export default async function getAllSkills() {
     const skillsData = skillsQuerySnap.docs.map((doc) => {
       const skillData = doc.data()
 
-      return { uid: doc.id, ...skillData }
+      return { ...skillData, uid: doc.id }
     })
 
     return skillsData

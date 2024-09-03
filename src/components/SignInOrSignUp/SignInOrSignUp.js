@@ -428,7 +428,7 @@ function BaseComponent() {
             <div className='mb-5'>
               <label
                 className={classNames(
-                  'input input-bordered flex items-center gap-2',
+                  'input input-bordered text-lg flex items-center gap-2',
                   {
                     'input-primary': !errorsIn?.email,
                     'input-error': errorsIn?.email,
@@ -453,7 +453,7 @@ function BaseComponent() {
             <div className='mb-5'>
               <label
                 className={classNames(
-                  'input input-bordered flex items-center gap-2',
+                  'input input-bordered text-lg flex items-center gap-2',
                   {
                     'input-primary': !errorsIn?.password,
                     'input-error': errorsIn?.password,
@@ -529,7 +529,7 @@ function BaseComponent() {
             <div className='mb-5'>
               <label
                 className={classNames(
-                  'input input-bordered flex items-center gap-2',
+                  'input input-bordered text-lg flex items-center gap-2',
                   {
                     'input-secondary': !errorsUp?.name,
                     'input-error': errorsUp?.name,
@@ -553,7 +553,7 @@ function BaseComponent() {
             <div className='mb-5'>
               <label
                 className={classNames(
-                  'input input-bordered flex items-center gap-2',
+                  'input input-bordered text-lg flex items-center gap-2',
                   {
                     'input-secondary': !errorsUp?.email,
                     'input-error': errorsUp?.email,
@@ -577,7 +577,7 @@ function BaseComponent() {
             <div className='mb-5'>
               <label
                 className={classNames(
-                  'input input-bordered flex items-center gap-2',
+                  'input input-bordered text-lg flex items-center gap-2',
                   {
                     'input-secondary': !errorsUp?.password,
                     'input-error': errorsUp?.password,
