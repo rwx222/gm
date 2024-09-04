@@ -5,6 +5,7 @@ import * as yup from 'yup'
 import { yupResolver } from '@hookform/resolvers/yup'
 import { useForm } from 'react-hook-form'
 import classNames from 'classnames'
+import { omit } from 'ramda'
 import { isNonEmptyString } from 'ramda-adjunct'
 import { initializeApp } from 'firebase/app'
 import {
@@ -19,6 +20,7 @@ import {
   doc,
   updateDoc,
   collection,
+  serverTimestamp,
 } from 'firebase/firestore'
 import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage'
 import { useRouter } from 'next/navigation'
@@ -54,6 +56,7 @@ const schema = yup
       .max(60, 'Máximo ${max} caracteres'),
     description: yup.string().trim().max(200, 'Máximo ${max} caracteres'),
     eventType: yup.string().trim().required('Campo requerido'),
+    bannerUrl: yup.string().trim().required('Campo requerido'),
     isPublished: yup.bool(),
   })
   .required()
@@ -174,6 +177,18 @@ function BaseComponent({ eventTypes, userUid, eventData }) {
             bannerUrl = await getDownloadURL(eventBannerRef)
           }
 
+          const logPayload = {
+            ...omit(['uid'], eventData),
+            _uid: eventUid,
+            _loggedAt: serverTimestamp(),
+          }
+          addDoc(collection(dbRef.current, 'log_events'), logPayload)
+            .then(() => true)
+            .catch((error) => {
+              console.error(error)
+              console.error(`💥> ALE '${error?.message}'`)
+            })
+
           const eventDocRef = doc(dbRef.current, 'events', eventUid)
           const eventPayload = {
             name: normalizeSpaces(formData.name),
@@ -232,7 +247,7 @@ function BaseComponent({ eventTypes, userUid, eventData }) {
         setIsLoading(false)
       }
     },
-    [eventUid, router, userUid]
+    [eventData, eventUid, router, userUid]
   )
 
   const cropAndCompressImage = useCallback(async () => {
@@ -251,7 +266,9 @@ function BaseComponent({ eventTypes, userUid, eventData }) {
         quality: 0.9,
         success: (compressedFile) => {
           compressedCroppedImageBlobRef.current = compressedFile
-          setValue('bannerUrl', URL.createObjectURL(compressedFile))
+          setValue('bannerUrl', URL.createObjectURL(compressedFile), {
+            shouldValidate: true,
+          })
         },
         error: (msg) => {
           console.error(`💥> CIE`, msg)
@@ -360,11 +377,12 @@ function BaseComponent({ eventTypes, userUid, eventData }) {
           </div>
 
           <div className='mb-5'>
-            <FieldLabel>{`Banner (recomendado: 720x308px)`}</FieldLabel>
+            <FieldLabel>{`* Banner (recomendado: 720x308px)`}</FieldLabel>
             <div
               className={classNames('min-h-56', {
-                'flex items-center justify-center border border-accent':
-                  !isThereABanner,
+                'flex items-center justify-center border': !isThereABanner,
+                'border-error': errors?.bannerUrl && !isThereABanner,
+                'border-accent': !errors?.bannerUrl && !isThereABanner,
               })}
             >
               {isThereABanner ? (
@@ -411,24 +429,29 @@ function BaseComponent({ eventTypes, userUid, eventData }) {
                 </button>
               )}
             </div>
+            {errors?.bannerUrl && (
+              <FieldErrorLabel>{errors?.bannerUrl?.message}</FieldErrorLabel>
+            )}
           </div>
 
-          <div className='mb-5 flex justify-end'>
-            <label className='label cursor-pointer'>
-              <span className='font-normal text-xs xs:text-base pr-3'>
-                {`Publicar`}
-              </span>
-              <input
-                type='checkbox'
-                className='toggle toggle-accent'
-                disabled={isLoading}
-                checked={isPublishedFieldValue}
-                onChange={(e) => {
-                  setValue('isPublished', Boolean(e.target.checked))
-                }}
-              />
-            </label>
-          </div>
+          {eventUid && (
+            <div className='mb-5 flex justify-end'>
+              <label className='label cursor-pointer'>
+                <span className='font-normal text-xs xs:text-base pr-3'>
+                  {`Publicar`}
+                </span>
+                <input
+                  type='checkbox'
+                  className='toggle toggle-accent'
+                  disabled={isLoading}
+                  checked={isPublishedFieldValue}
+                  onChange={(e) => {
+                    setValue('isPublished', e.target.checked)
+                  }}
+                />
+              </label>
+            </div>
+          )}
 
           <button
             type='submit'
@@ -440,9 +463,7 @@ function BaseComponent({ eventTypes, userUid, eventData }) {
               ? isPublishedFieldValue
                 ? `Guardar`
                 : `Pausar evento`
-              : isPublishedFieldValue
-              ? `Publicar`
-              : `Guardar borrador`}
+              : `Publicar`}
           </button>
         </form>
       </section>

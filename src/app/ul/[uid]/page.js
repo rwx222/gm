@@ -5,8 +5,6 @@ import { FN_PATH_USER_PAGE } from '@/constants'
 
 export const dynamic = 'force-dynamic'
 
-export const dynamicParams = true
-
 export default async function ULPage({ params }) {
   const userData = await getUser(params.uid)
 

@@ -23,6 +23,16 @@ export default async function EditEventPage({ params }) {
   const eventTypes = (await getAllEventTypes()) ?? []
   const eventData = await getEvent(params.uid)
 
+  if (eventData?.eventType) {
+    const existsEventType = eventTypes.some((type) => {
+      return type.key === eventData?.eventType
+    })
+
+    if (!existsEventType) {
+      eventData.eventType = ''
+    }
+  }
+
   return (
     <main className='p-5'>
       <CreateEditEvent
