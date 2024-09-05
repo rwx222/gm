@@ -98,7 +98,7 @@ const schema = yup
       .required('Campo requerido')
       .min(FIELD_USERNAME_MIN_LENGTH, 'Mínimo ${min} caracteres')
       .max(FIELD_USERNAME_MAX_LENGTH, 'Máximo ${max} caracteres')
-      .matches(REGEX_USER_USERNAME, 'Ejemplo: titor_1-2'),
+      .matches(REGEX_USER_USERNAME, 'Ejemplo: john_titor-0'),
     snUserTiktok: yup
       .string()
       .trim()

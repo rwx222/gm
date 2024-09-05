@@ -5,6 +5,8 @@ import CreateEditEvent from '@/components/CreateEditEvent/CreateEditEvent'
 import getSessionUserUid from '@/data/getSessionUserUid'
 import getAllEventTypes from '@/data/getAllEventTypes'
 import getEvent from '@/data/getEvent'
+import getUsersToSearchData from '@/data/getUsersToSearchData'
+import { obfuscateText } from '@/utils/obfuscation'
 
 export const dynamic = 'force-dynamic'
 
@@ -22,6 +24,10 @@ export default async function EditEventPage({ params }) {
 
   const eventTypes = (await getAllEventTypes()) ?? []
   const eventData = await getEvent(params.uid)
+  const searchableUsers = (await getUsersToSearchData()) ?? []
+  const obfuscatedSearchableUsersString = obfuscateText(
+    JSON.stringify(searchableUsers)
+  )
 
   if (eventData?.eventType) {
     const existsEventType = eventTypes.some((type) => {
@@ -38,6 +44,7 @@ export default async function EditEventPage({ params }) {
       <CreateEditEvent
         userUid={sessionUserUid}
         eventTypes={eventTypes}
+        osus={obfuscatedSearchableUsersString}
         eventData={eventData}
       />
     </main>

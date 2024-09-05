@@ -1,6 +1,13 @@
 'use client'
 import 'react-easy-crop/react-easy-crop.css'
-import { Suspense, useCallback, useState, useEffect, useRef } from 'react'
+import {
+  Suspense,
+  useCallback,
+  useState,
+  useEffect,
+  useRef,
+  useMemo,
+} from 'react'
 import * as yup from 'yup'
 import { yupResolver } from '@hookform/resolvers/yup'
 import { useForm } from 'react-hook-form'
@@ -21,6 +28,7 @@ import {
   updateDoc,
   collection,
   serverTimestamp,
+  // writeBatch, // TODO: -> use this writeBatch
 } from 'firebase/firestore'
 import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage'
 import { useRouter } from 'next/navigation'
@@ -34,8 +42,8 @@ import {
   SS_KEY_SAVED_EVENT,
 } from '@/constants'
 import revalidatePathAction from '@/actions/revalidatePathAction'
-import normalizeSpaces from '@/utils/normalizeSpaces'
 import getCustomTokenAction from '@/actions/getCustomTokenAction'
+import normalizeSpaces from '@/utils/normalizeSpaces'
 import firebaseConfig from '@/data/firebaseConfig'
 import BasicModalDialog from '@/ui/BasicModalDialog'
 import FieldLabel from '@/ui/FieldLabel'
@@ -44,6 +52,9 @@ import StandardCropperWrapper from '@/ui/StandardCropperWrapper'
 import getCroppedImage from '@/utils-front/getCroppedImage'
 import ImageIcon from '@/icons/ImageIcon'
 import Trash2Icon from '@/icons/Trash2Icon'
+import normalizeForSearch from '@/utils/normalizeForSearch'
+import getUsernameFromEmail from '@/utils/getUsernameFromEmail'
+import { deobfuscateText } from '@/utils/obfuscation'
 
 // TODO: -> put min max values as constants
 const schema = yup
@@ -73,7 +84,7 @@ const getBannerPath = (uid) => {
   return 'event/' + uid + '/page/banner.jpg'
 }
 
-function BaseComponent({ eventTypes, userUid, eventData }) {
+function BaseComponent({ eventTypes, userUid, eventData, osus }) {
   const allowBackgroundSignIn = useRef(true)
   const authRef = useRef(null)
   const dbRef = useRef(null)
@@ -86,6 +97,7 @@ function BaseComponent({ eventTypes, userUid, eventData }) {
   const [tempImageUrlToCrop, setTempImageUrlToCrop] = useState('')
   const [zoom, setZoom] = useState(1)
   const [crop, setCrop] = useState({ x: 0, y: 0 })
+  const [searchUserText, setSearchUserText] = useState('')
 
   const router = useRouter()
   const eventUid = eventData?.uid
@@ -154,6 +166,30 @@ function BaseComponent({ eventTypes, userUid, eventData }) {
       unsubscribe()
     }
   }, [])
+
+  const searchableUsers = useMemo(() => {
+    try {
+      const searchableUsersJsonString = deobfuscateText(osus)
+      const resArr = JSON.parse(searchableUsersJsonString)
+      return resArr
+    } catch (error) {
+      console.error(error)
+      console.error(`💥> DSU '${error?.message}'`)
+      return []
+    }
+  }, [osus])
+
+  const searchUserResults = useMemo(() => {
+    // TODO: -> use https://github.com/downshift-js/downshift
+    const cleanSearchText = normalizeForSearch(
+      getUsernameFromEmail(searchUserText)
+    )
+
+    if (cleanSearchText.length >= 2) {
+      return searchableUsers.filter((u) => u._s.includes(cleanSearchText))
+    }
+    return []
+  }, [searchUserText, searchableUsers])
 
   const onSubmit = useCallback(
     async (formData) => {

@@ -15,6 +15,7 @@
     "@hookform/resolvers": "3.9.0",
     "classnames": "2.5.1",
     "cookie": "0.6.0",
+    "crypto-js": "4.2.0",
     "firebase": "10.12.5",
     "firebase-admin": "12.3.0",
     "js-cookie": "3.0.5",
