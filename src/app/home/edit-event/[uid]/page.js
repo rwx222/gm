@@ -1,12 +1,17 @@
 import { redirect } from 'next/navigation'
 
-import { PATH_AUTH } from '@/constants'
+import {
+  PATH_AUTH,
+  EVENT_ROLE_JUDGE,
+  EVENT_ROLE_PARTICIPANT,
+} from '@/constants'
 import CreateEditEvent from '@/components/CreateEditEvent/CreateEditEvent'
 import getSessionUserUid from '@/data/getSessionUserUid'
 import getAllEventTypes from '@/data/getAllEventTypes'
 import getEvent from '@/data/getEvent'
 import getUsersToSearchData from '@/data/getUsersToSearchData'
-import { obfuscateText } from '@/utils/obfuscation'
+import getEventUsers from '@/data/getEventUsers'
+import { obfuscateDataToText } from '@/utils/obfuscation'
 
 export const dynamic = 'force-dynamic'
 
@@ -24,10 +29,9 @@ export default async function EditEventPage({ params }) {
 
   const eventTypes = (await getAllEventTypes()) ?? []
   const eventData = await getEvent(params.uid)
-  const searchableUsers = (await getUsersToSearchData()) ?? []
-  const obfuscatedSearchableUsersString = obfuscateText(
-    JSON.stringify(searchableUsers)
-  )
+  const eventUsers = (await getEventUsers(params.uid)) ?? []
+  const availableUsers = (await getUsersToSearchData()) ?? []
+  const obfuscatedAvailableUsersString = obfuscateDataToText(availableUsers)
 
   if (eventData?.eventType) {
     const existsEventType = eventTypes.some((type) => {
@@ -39,13 +43,23 @@ export default async function EditEventPage({ params }) {
     }
   }
 
+  const eventJudgesUids = eventUsers
+    .filter((eventUser) => eventUser.role === EVENT_ROLE_JUDGE)
+    .map((eventUser) => eventUser.userUid)
+
+  const eventParticipantsUids = eventUsers
+    .filter((eventUser) => eventUser.role === EVENT_ROLE_PARTICIPANT)
+    .map((eventUser) => eventUser.userUid)
+
   return (
     <main className='p-5'>
       <CreateEditEvent
         userUid={sessionUserUid}
         eventTypes={eventTypes}
-        osus={obfuscatedSearchableUsersString}
+        oaus={obfuscatedAvailableUsersString}
         eventData={eventData}
+        eventJudgesUids={eventJudgesUids}
+        eventParticipantsUids={eventParticipantsUids}
       />
     </main>
   )

@@ -5,7 +5,7 @@ import CreateEditEvent from '@/components/CreateEditEvent/CreateEditEvent'
 import getSessionUserUid from '@/data/getSessionUserUid'
 import getAllEventTypes from '@/data/getAllEventTypes'
 import getUsersToSearchData from '@/data/getUsersToSearchData'
-import { obfuscateText } from '@/utils/obfuscation'
+import { obfuscateDataToText } from '@/utils/obfuscation'
 
 export const dynamic = 'force-dynamic'
 
@@ -22,17 +22,15 @@ export default async function CreateEventPage() {
   }
 
   const eventTypes = (await getAllEventTypes()) ?? []
-  const searchableUsers = (await getUsersToSearchData()) ?? []
-  const obfuscatedSearchableUsers = obfuscateText(
-    JSON.stringify(searchableUsers)
-  )
+  const availableUsers = (await getUsersToSearchData()) ?? []
+  const obfuscatedAvailableUsersString = obfuscateDataToText(availableUsers)
 
   return (
     <main className='p-5'>
       <CreateEditEvent
         userUid={sessionUserUid}
         eventTypes={eventTypes}
-        osus={obfuscatedSearchableUsers}
+        oaus={obfuscatedAvailableUsersString}
       />
     </main>
   )

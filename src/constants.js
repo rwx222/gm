@@ -4,6 +4,15 @@ export const SESSION_COOKIE_NAME = 'gmfbscn'
 
 export const IS_PRODUCTION = process.env.NODE_ENV === 'production'
 
+// event roles
+export const EVENT_ROLE_JUDGE = 'judge'
+export const EVENT_ROLE_PARTICIPANT = 'participant'
+export const EVENT_ROLE_ASSISTANT = 'assistant'
+
+// event user statuses
+export const EVENT_USER_STATUS_ACCEPTED = 'accepted'
+export const EVENT_USER_STATUS_REJECTED = 'rejected'
+
 // regex
 export const REGEX_USER_PASSWORD = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).+$/
 export const REGEX_USER_USERNAME = /^[a-z0-9_-]+$/

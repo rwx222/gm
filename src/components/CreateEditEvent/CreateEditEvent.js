@@ -13,7 +13,7 @@ import { yupResolver } from '@hookform/resolvers/yup'
 import { useForm } from 'react-hook-form'
 import classNames from 'classnames'
 import { omit } from 'ramda'
-import { isNonEmptyString } from 'ramda-adjunct'
+import { isNonEmptyString, isNonEmptyArray } from 'ramda-adjunct'
 import { initializeApp } from 'firebase/app'
 import {
   getAuth,
@@ -23,12 +23,12 @@ import {
 } from 'firebase/auth'
 import {
   getFirestore,
-  addDoc,
   doc,
+  addDoc,
   updateDoc,
   collection,
   serverTimestamp,
-  // writeBatch, // TODO: -> use this writeBatch
+  writeBatch,
 } from 'firebase/firestore'
 import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage'
 import { useRouter } from 'next/navigation'
@@ -40,6 +40,8 @@ import {
   FN_PATH_EVENT_PAGE,
   EVENT_SIGN_OUT_SIGNAL,
   SS_KEY_SAVED_EVENT,
+  EVENT_ROLE_JUDGE,
+  EVENT_ROLE_PARTICIPANT,
 } from '@/constants'
 import revalidatePathAction from '@/actions/revalidatePathAction'
 import getCustomTokenAction from '@/actions/getCustomTokenAction'
@@ -52,9 +54,12 @@ import StandardCropperWrapper from '@/ui/StandardCropperWrapper'
 import getCroppedImage from '@/utils-front/getCroppedImage'
 import ImageIcon from '@/icons/ImageIcon'
 import Trash2Icon from '@/icons/Trash2Icon'
+import ArrowBigUpIcon from '@/icons/ArrowBigUpIcon'
+import ArrowBigDownIcon from '@/icons/ArrowBigDownIcon'
 import normalizeForSearch from '@/utils/normalizeForSearch'
 import getUsernameFromEmail from '@/utils/getUsernameFromEmail'
-import { deobfuscateText } from '@/utils/obfuscation'
+import { deobfuscateTextToData } from '@/utils/obfuscation'
+import SearchUsersCombobox from '@/components/SearchUsersCombobox/SearchUsersCombobox'
 
 // TODO: -> put min max values as constants
 const schema = yup
@@ -84,7 +89,14 @@ const getBannerPath = (uid) => {
   return 'event/' + uid + '/page/banner.jpg'
 }
 
-function BaseComponent({ eventTypes, userUid, eventData, osus }) {
+function BaseComponent({
+  eventTypes,
+  userUid,
+  eventData,
+  oaus,
+  eventJudgesUids,
+  eventParticipantsUids,
+}) {
   const allowBackgroundSignIn = useRef(true)
   const authRef = useRef(null)
   const dbRef = useRef(null)
@@ -97,7 +109,13 @@ function BaseComponent({ eventTypes, userUid, eventData, osus }) {
   const [tempImageUrlToCrop, setTempImageUrlToCrop] = useState('')
   const [zoom, setZoom] = useState(1)
   const [crop, setCrop] = useState({ x: 0, y: 0 })
-  const [searchUserText, setSearchUserText] = useState('')
+
+  const [judgesUids, setJudgesUids] = useState(
+    isNonEmptyArray(eventJudgesUids) ? eventJudgesUids : []
+  )
+  const [participantsUids, setParticipantsUids] = useState(
+    isNonEmptyArray(eventParticipantsUids) ? eventParticipantsUids : []
+  )
 
   const router = useRouter()
   const eventUid = eventData?.uid
@@ -167,29 +185,39 @@ function BaseComponent({ eventTypes, userUid, eventData, osus }) {
     }
   }, [])
 
-  const searchableUsers = useMemo(() => {
+  const availableUsers = useMemo(() => {
+    let res = []
     try {
-      const searchableUsersJsonString = deobfuscateText(osus)
-      const resArr = JSON.parse(searchableUsersJsonString)
-      return resArr
+      const resArr = deobfuscateTextToData(oaus)
+      if (isNonEmptyArray(resArr)) {
+        res = resArr
+      }
     } catch (error) {
       console.error(error)
       console.error(`💥> DSU '${error?.message}'`)
-      return []
     }
-  }, [osus])
+    return res
+  }, [oaus])
 
-  const searchUserResults = useMemo(() => {
-    // TODO: -> use https://github.com/downshift-js/downshift
-    const cleanSearchText = normalizeForSearch(
-      getUsernameFromEmail(searchUserText)
-    )
+  const searchableUsers = useMemo(() => {
+    return availableUsers.filter((u) => {
+      return !judgesUids.includes(u?.uid) && !participantsUids.includes(u?.uid)
+    })
+  }, [availableUsers, judgesUids, participantsUids])
 
-    if (cleanSearchText.length >= 2) {
-      return searchableUsers.filter((u) => u._s.includes(cleanSearchText))
+  const makeSearchUsersFilterFn = useCallback((inputValue) => {
+    const cleanValue = normalizeForSearch(getUsernameFromEmail(inputValue))
+
+    return function usersFilter(searchableUser) {
+      return !inputValue || searchableUser._s.includes(cleanValue)
     }
-    return []
-  }, [searchUserText, searchableUsers])
+  }, [])
+
+  const addInvitedUser = useCallback((uid) => {
+    setParticipantsUids((prevState) => {
+      return [...prevState, uid]
+    })
+  }, [])
 
   const onSubmit = useCallback(
     async (formData) => {
@@ -266,6 +294,71 @@ function BaseComponent({ eventTypes, userUid, eventData, osus }) {
           await updateDoc(newEventDocRef, { bannerUrl })
         }
 
+        if (isNonEmptyArray(judgesUids) || isNonEmptyArray(participantsUids)) {
+          const eventsUsersBatch = writeBatch(dbRef.current)
+
+          judgesUids.forEach((uid) => {
+            const eventUserUid = finalEventId + '___' + uid
+            const eventUserDocRef = doc(
+              dbRef.current,
+              'events_users',
+              eventUserUid
+            )
+            const eventUserPayload = {
+              eventUid: finalEventId,
+              userUid: uid,
+              role: EVENT_ROLE_JUDGE,
+            }
+            eventsUsersBatch.set(eventUserDocRef, eventUserPayload, {
+              merge: true,
+            })
+          })
+
+          participantsUids.forEach((uid) => {
+            const eventUserUid = finalEventId + '___' + uid
+            const eventUserDocRef = doc(
+              dbRef.current,
+              'events_users',
+              eventUserUid
+            )
+            const eventUserPayload = {
+              eventUid: finalEventId,
+              userUid: uid,
+              role: EVENT_ROLE_PARTICIPANT,
+            }
+            eventsUsersBatch.set(eventUserDocRef, eventUserPayload, {
+              merge: true,
+            })
+          })
+
+          await eventsUsersBatch.commit()
+        }
+
+        const initialEventUsersUids = []
+        if (isNonEmptyArray(eventJudgesUids)) {
+          initialEventUsersUids.push(...eventJudgesUids)
+        }
+        if (isNonEmptyArray(eventParticipantsUids)) {
+          initialEventUsersUids.push(...eventParticipantsUids)
+        }
+        const eventUsersUidsToDelete = initialEventUsersUids.filter((uid) => {
+          return !judgesUids.includes(uid) && !participantsUids.includes(uid)
+        })
+
+        if (isNonEmptyArray(eventUsersUidsToDelete)) {
+          const eventsUsersToDeleteBatch = writeBatch(dbRef.current)
+          eventUsersUidsToDelete.forEach((uid) => {
+            const eventUserUid = finalEventId + '___' + uid
+            const eventUserDocRef = doc(
+              dbRef.current,
+              'events_users',
+              eventUserUid
+            )
+            eventsUsersToDeleteBatch.delete(eventUserDocRef)
+          })
+          await eventsUsersToDeleteBatch.commit()
+        }
+
         await revalidatePathAction(FN_PATH_EVENT_PAGE(finalEventId))
           .then(() => true)
           .catch((error) => {
@@ -283,7 +376,16 @@ function BaseComponent({ eventTypes, userUid, eventData, osus }) {
         setIsLoading(false)
       }
     },
-    [eventData, eventUid, router, userUid]
+    [
+      eventData,
+      eventJudgesUids,
+      eventParticipantsUids,
+      eventUid,
+      judgesUids,
+      participantsUids,
+      router,
+      userUid,
+    ]
   )
 
   const cropAndCompressImage = useCallback(async () => {
@@ -469,6 +571,147 @@ function BaseComponent({ eventTypes, userUid, eventData, osus }) {
               <FieldErrorLabel>{errors?.bannerUrl?.message}</FieldErrorLabel>
             )}
           </div>
+
+          {isNonEmptyArray(availableUsers) && (
+            <div>
+              <div className='mb-3 px-4 py-2 rounded-lg bg-base-200 text-base font-normal italic'>
+                {`Puedes invitar usuarios al evento ahora, o puedes hacerlo después. También puedes promover un participante a juez o viceversa.`}
+              </div>
+
+              <div className='mb-5'>
+                <SearchUsersCombobox
+                  dataArr={searchableUsers}
+                  makeFilterFn={makeSearchUsersFilterFn}
+                  onSelectedUser={addInvitedUser}
+                />
+              </div>
+            </div>
+          )}
+
+          {(isNonEmptyArray(judgesUids) ||
+            isNonEmptyArray(participantsUids)) && (
+            <div className='mb-5'>
+              <div className='divider divider-primary text-primary font-semibold'>
+                {`Jueces`}
+              </div>
+              {isNonEmptyArray(judgesUids) ? (
+                <div>
+                  {availableUsers
+                    .filter((user) => judgesUids.includes(user?.uid))
+                    .map((user) => {
+                      const removeJudge = () => {
+                        setJudgesUids((prevState) => {
+                          return prevState.filter((uid) => uid !== user?.uid)
+                        })
+                      }
+
+                      const convertToParticipant = () => {
+                        removeJudge()
+                        setParticipantsUids((prevState) => {
+                          return [...prevState, user?.uid]
+                        })
+                      }
+
+                      return (
+                        <div key={user?.uid} className='flex items-center py-2'>
+                          <div className='grow shrink basis-0'>
+                            <div className='pr-3 text-sm leading-none'>
+                              <div>{user?.displayName}</div>
+                              <div className='text-primary'>
+                                {user?.username}
+                              </div>
+                            </div>
+                          </div>
+
+                          <div className='w-20 flex items-center justify-between'>
+                            <button
+                              type='button'
+                              onClick={removeJudge}
+                              title='Eliminar juez'
+                              disabled={isLoading}
+                              className='btn btn-sm btn-square btn-neutral text-primary'
+                            >
+                              <Trash2Icon width='18' height='18' />
+                            </button>
+                            <button
+                              type='button'
+                              onClick={convertToParticipant}
+                              title='Convertir en participante'
+                              disabled={isLoading}
+                              className='btn btn-sm btn-square btn-neutral text-primary'
+                            >
+                              <ArrowBigDownIcon />
+                            </button>
+                          </div>
+                        </div>
+                      )
+                    })}
+                </div>
+              ) : (
+                <div className='text-center'>{`No hay jueces`}</div>
+              )}
+
+              <div className='divider divider-accent text-accent font-semibold'>
+                {`Participantes`}
+              </div>
+              {isNonEmptyArray(participantsUids) ? (
+                <div>
+                  {availableUsers
+                    .filter((user) => participantsUids.includes(user?.uid))
+                    .map((user) => {
+                      const removeParticipant = () => {
+                        setParticipantsUids((prevState) => {
+                          return prevState.filter((uid) => uid !== user?.uid)
+                        })
+                      }
+
+                      const convertToJudge = () => {
+                        removeParticipant()
+                        setJudgesUids((prevState) => {
+                          return [...prevState, user?.uid]
+                        })
+                      }
+
+                      return (
+                        <div key={user?.uid} className='flex items-center py-2'>
+                          <div className='grow shrink basis-0'>
+                            <div className='pr-3 text-sm leading-none'>
+                              <div>{user?.displayName}</div>
+                              <div className='text-accent'>
+                                {user?.username}
+                              </div>
+                            </div>
+                          </div>
+
+                          <div className='w-20 flex items-center justify-between'>
+                            <button
+                              type='button'
+                              onClick={removeParticipant}
+                              title='Eliminar participante'
+                              disabled={isLoading}
+                              className='btn btn-sm btn-square btn-neutral text-accent'
+                            >
+                              <Trash2Icon width='18' height='18' />
+                            </button>
+                            <button
+                              type='button'
+                              onClick={convertToJudge}
+                              title='Convertir en juez'
+                              disabled={isLoading}
+                              className='btn btn-sm btn-square btn-neutral text-accent'
+                            >
+                              <ArrowBigUpIcon />
+                            </button>
+                          </div>
+                        </div>
+                      )
+                    })}
+                </div>
+              ) : (
+                <div className='text-center'>{`No hay participantes`}</div>
+              )}
+            </div>
+          )}
 
           {eventUid && (
             <div className='mb-5 flex justify-end'>
