@@ -566,6 +566,7 @@ function BaseComponent({
                   type='button'
                   className='btn btn-outline btn-accent text-lg'
                   onClick={openUploadFilePicker}
+                  disabled={isLoading}
                 >
                   <ImageIcon />
                   {`Subir imagen`}
@@ -588,6 +589,7 @@ function BaseComponent({
                   dataArr={searchableUsers}
                   makeFilterFn={makeSearchUsersFilterFn}
                   onSelectedUser={addInvitedUser}
+                  disabled={isLoading}
                 />
               </div>
             </div>

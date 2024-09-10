@@ -6,7 +6,7 @@ import { useState, Suspense, useCallback, useEffect } from 'react'
 
 import SearchIcon from '@/icons/SearchIcon'
 
-function BaseComponent({ dataArr, makeFilterFn, onSelectedUser }) {
+function BaseComponent({ disabled, dataArr, makeFilterFn, onSelectedUser }) {
   const [items, setItems] = useState(dataArr)
 
   const stateReducer = useCallback(
@@ -68,6 +68,7 @@ function BaseComponent({ dataArr, makeFilterFn, onSelectedUser }) {
           <input
             placeholder='Name, username or email'
             className='grow'
+            disabled={disabled}
             {...getInputProps()}
           />
 
