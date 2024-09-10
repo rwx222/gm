@@ -85,6 +85,9 @@ export const FIELD_USERNAME_MAX_LENGTH = 30
 export const FIELD_PHONE_MIN_LENGTH = 6
 export const FIELD_PHONE_MAX_LENGTH = 16
 export const FIELD_SN_USERNAME_MAX_LENGTH = 100
+export const FIELD_EVENT_NAME_MIN_LENGTH = 1
+export const FIELD_EVENT_NAME_MAX_LENGTH = 60
+export const FIELD_EVENT_DESCRIPTION_MAX_LENGTH = 200
 
 // custom errors
 export const ERROR_CODE_INVALID_CSRF = 'middleware/invalid-csrf-token'

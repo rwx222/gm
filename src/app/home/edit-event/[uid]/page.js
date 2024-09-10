@@ -1,4 +1,4 @@
-import { redirect } from 'next/navigation'
+import { redirect, notFound } from 'next/navigation'
 
 import {
   PATH_AUTH,
@@ -26,11 +26,16 @@ export default async function EditEventPage({ params }) {
     // the user is not logged in
     redirect(PATH_AUTH)
   }
+  const eventData = await getEvent(params.uid)
+
+  if (sessionUserUid !== eventData?.ownerUid) {
+    // only the owner of the event can edit it
+    notFound()
+  }
 
   const eventTypes = (await getAllEventTypes()) ?? []
-  const eventData = await getEvent(params.uid)
-  const eventUsers = (await getEventUsers(params.uid)) ?? []
   const availableUsers = (await getUsersToSearchData()) ?? []
+  const eventUsers = (await getEventUsers(params.uid)) ?? []
   const obfuscatedAvailableUsersString = obfuscateDataToText(availableUsers)
 
   if (eventData?.eventType) {

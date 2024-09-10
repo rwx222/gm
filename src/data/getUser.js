@@ -4,6 +4,7 @@ import formatUserData from '@/utils/formatUserData'
 /**
  * Retrieves user data from the DB.
  *
+ * @param {string} uid - The user ID of the user.
  * @return {Promise<{
  *   uid: string
  *   email: string

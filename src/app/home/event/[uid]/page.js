@@ -2,11 +2,15 @@ import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { isNonEmptyString } from 'ramda-adjunct'
 
+import EventClientSection from '@/components/EventClientSection/EventClientSection'
+import { EVENT_ROLE_JUDGE, EVENT_ROLE_PARTICIPANT } from '@/constants'
+import { obfuscateDataToText } from '@/utils/obfuscation'
 import getAllEvents from '@/data/getAllEvents'
 import getAllEventTypes from '@/data/getAllEventTypes'
 import getEvent from '@/data/getEvent'
 import getUser from '@/data/getUser'
-import EventEditSection from '@/components/EventEditSection/EventEditSection'
+import getUsers from '@/data/getUsers'
+import getEventUsers from '@/data/getEventUsers'
 
 export const dynamic = 'force-static'
 
@@ -35,6 +39,22 @@ export default async function EventPage({ params }) {
   const ownerData = await getUser(eventData?.ownerUid)
   const eventTypes = (await getAllEventTypes()) ?? []
   const eventType = eventTypes.find((type) => type.key === eventData?.eventType)
+  const eventUsers = (await getEventUsers(params.uid)) ?? []
+
+  const eventJudgesUids = eventUsers
+    .filter((eventUser) => eventUser.role === EVENT_ROLE_JUDGE)
+    .map((eventUser) => eventUser.userUid)
+
+  const eventParticipantsUids = eventUsers
+    .filter((eventUser) => eventUser.role === EVENT_ROLE_PARTICIPANT)
+    .map((eventUser) => eventUser.userUid)
+
+  const judgesUsers = (await getUsers(eventJudgesUids)) ?? []
+  const participantsUsers = (await getUsers(eventParticipantsUids)) ?? []
+
+  const obfuscatedJudgesUsersString = obfuscateDataToText(judgesUsers)
+  const obfuscatedParticipantsUsersString =
+    obfuscateDataToText(participantsUsers)
 
   return (
     <main className='p-5'>
@@ -93,9 +113,13 @@ export default async function EventPage({ params }) {
         </section>
       )}
 
-      <EventEditSection
+      <EventClientSection
         eventUid={eventData?.uid}
         ownerUid={eventData?.ownerUid}
+        eventJudgesUids={eventJudgesUids}
+        eventParticipantsUids={eventParticipantsUids}
+        ojus={obfuscatedJudgesUsersString}
+        opus={obfuscatedParticipantsUsersString}
       />
     </main>
   )

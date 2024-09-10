@@ -42,6 +42,9 @@ import {
   SS_KEY_SAVED_EVENT,
   EVENT_ROLE_JUDGE,
   EVENT_ROLE_PARTICIPANT,
+  FIELD_EVENT_NAME_MIN_LENGTH,
+  FIELD_EVENT_NAME_MAX_LENGTH,
+  FIELD_EVENT_DESCRIPTION_MAX_LENGTH,
 } from '@/constants'
 import revalidatePathAction from '@/actions/revalidatePathAction'
 import getCustomTokenAction from '@/actions/getCustomTokenAction'
@@ -61,16 +64,18 @@ import getUsernameFromEmail from '@/utils/getUsernameFromEmail'
 import { deobfuscateTextToData } from '@/utils/obfuscation'
 import SearchUsersCombobox from '@/components/SearchUsersCombobox/SearchUsersCombobox'
 
-// TODO: -> put min max values as constants
 const schema = yup
   .object({
     name: yup
       .string()
       .trim()
       .required('Campo requerido')
-      .min(1, 'Mínimo ${min} caracteres')
-      .max(60, 'Máximo ${max} caracteres'),
-    description: yup.string().trim().max(200, 'Máximo ${max} caracteres'),
+      .min(FIELD_EVENT_NAME_MIN_LENGTH, 'Mínimo ${min} caracteres')
+      .max(FIELD_EVENT_NAME_MAX_LENGTH, 'Máximo ${max} caracteres'),
+    description: yup
+      .string()
+      .trim()
+      .max(FIELD_EVENT_DESCRIPTION_MAX_LENGTH, 'Máximo ${max} caracteres'),
     eventType: yup.string().trim().required('Campo requerido'),
     bannerUrl: yup.string().trim().required('Campo requerido'),
     isPublished: yup.bool(),
@@ -615,7 +620,7 @@ function BaseComponent({
                       return (
                         <div key={user?.uid} className='flex items-center py-2'>
                           <div className='grow shrink basis-0'>
-                            <div className='pr-3 text-sm leading-none'>
+                            <div className='pr-3 text-sm leading-4'>
                               <div>{user?.displayName}</div>
                               <div className='text-primary'>
                                 {user?.username}
@@ -648,10 +653,10 @@ function BaseComponent({
                     })}
                 </div>
               ) : (
-                <div className='text-center'>{`No hay jueces`}</div>
+                <div className='text-center'>{`Sin jueces`}</div>
               )}
 
-              <div className='divider divider-accent text-accent font-semibold'>
+              <div className='divider divider-secondary text-secondary font-semibold'>
                 {`Participantes`}
               </div>
               {isNonEmptyArray(participantsUids) ? (
@@ -675,9 +680,9 @@ function BaseComponent({
                       return (
                         <div key={user?.uid} className='flex items-center py-2'>
                           <div className='grow shrink basis-0'>
-                            <div className='pr-3 text-sm leading-none'>
+                            <div className='pr-3 text-sm leading-4'>
                               <div>{user?.displayName}</div>
-                              <div className='text-accent'>
+                              <div className='text-secondary'>
                                 {user?.username}
                               </div>
                             </div>
@@ -689,7 +694,7 @@ function BaseComponent({
                               onClick={removeParticipant}
                               title='Eliminar participante'
                               disabled={isLoading}
-                              className='btn btn-sm btn-square btn-neutral text-accent'
+                              className='btn btn-sm btn-square btn-neutral text-secondary'
                             >
                               <Trash2Icon width='18' height='18' />
                             </button>
@@ -698,7 +703,7 @@ function BaseComponent({
                               onClick={convertToJudge}
                               title='Convertir en juez'
                               disabled={isLoading}
-                              className='btn btn-sm btn-square btn-neutral text-accent'
+                              className='btn btn-sm btn-square btn-neutral text-secondary'
                             >
                               <ArrowBigUpIcon />
                             </button>
@@ -708,7 +713,7 @@ function BaseComponent({
                     })}
                 </div>
               ) : (
-                <div className='text-center'>{`No hay participantes`}</div>
+                <div className='text-center'>{`Sin participantes`}</div>
               )}
             </div>
           )}
