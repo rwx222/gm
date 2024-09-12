@@ -1,5 +1,6 @@
 'use client'
 import 'react-easy-crop/react-easy-crop.css'
+import 'react-datepicker/dist/react-datepicker.css'
 import {
   Suspense,
   useCallback,
@@ -35,6 +36,8 @@ import { useRouter } from 'next/navigation'
 import Cropper from 'react-easy-crop'
 import ImageCompressor from 'js-image-compressor'
 import toast from 'react-hot-toast'
+import DatePicker from 'react-datepicker'
+import { subDays } from 'date-fns'
 
 import {
   FN_PATH_EVENT_PAGE,
@@ -45,6 +48,7 @@ import {
   FIELD_EVENT_NAME_MIN_LENGTH,
   FIELD_EVENT_NAME_MAX_LENGTH,
   FIELD_EVENT_DESCRIPTION_MAX_LENGTH,
+  DATEPICKER_DEFAULT_PROPS,
 } from '@/constants'
 import revalidatePathAction from '@/actions/revalidatePathAction'
 import getCustomTokenAction from '@/actions/getCustomTokenAction'
@@ -54,6 +58,7 @@ import BasicModalDialog from '@/ui/BasicModalDialog'
 import FieldLabel from '@/ui/FieldLabel'
 import FieldErrorLabel from '@/ui/FieldErrorLabel'
 import StandardCropperWrapper from '@/ui/StandardCropperWrapper'
+import DatePickerCustomInputButton from '@/ui/DatePickerCustomInputButton'
 import getCroppedImage from '@/utils-front/getCroppedImage'
 import ImageIcon from '@/icons/ImageIcon'
 import Trash2Icon from '@/icons/Trash2Icon'
@@ -62,6 +67,7 @@ import ArrowBigDownIcon from '@/icons/ArrowBigDownIcon'
 import normalizeForSearch from '@/utils/normalizeForSearch'
 import getUsernameFromEmail from '@/utils/getUsernameFromEmail'
 import { deobfuscateTextToData } from '@/utils/obfuscation'
+import dateFnsFormat from '@/utils/dateFnsFormat'
 import SearchUsersCombobox from '@/components/SearchUsersCombobox/SearchUsersCombobox'
 
 const schema = yup
@@ -121,6 +127,7 @@ function BaseComponent({
   const [participantsUids, setParticipantsUids] = useState(
     isNonEmptyArray(eventParticipantsUids) ? eventParticipantsUids : []
   )
+  const [startDate, setStartDate] = useState(null)
 
   const router = useRouter()
   const eventUid = eventData?.uid
@@ -476,6 +483,29 @@ function BaseComponent({
             {errors?.name && (
               <FieldErrorLabel>{errors?.name?.message}</FieldErrorLabel>
             )}
+          </div>
+
+          <div className='mb-5'>
+            <FieldLabel>{`* Fecha y hora`}</FieldLabel>
+            <DatePicker
+              {...DATEPICKER_DEFAULT_PROPS}
+              minDate={subDays(new Date(), 1)}
+              disabled={isLoading}
+              selected={startDate}
+              onChange={(date) => {
+                setStartDate(date)
+              }}
+              customInput={
+                <DatePickerCustomInputButton className='btn btn-accent btn-outline btn-block text-lg capitalize'>
+                  {startDate
+                    ? dateFnsFormat(
+                        startDate,
+                        DATEPICKER_DEFAULT_PROPS.dateFormat
+                      )
+                    : '---'}
+                </DatePickerCustomInputButton>
+              }
+            />
           </div>
 
           <div className='mb-5'>

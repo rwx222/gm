@@ -26,6 +26,7 @@
     "ramda": "0.30.1",
     "ramda-adjunct": "5.1.0",
     "react": "18",
+    "react-datepicker": "7.3.0",
     "react-dom": "18",
     "react-easy-crop": "5.0.8",
     "react-hook-form": "7.53.0",

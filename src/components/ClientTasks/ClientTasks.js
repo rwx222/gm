@@ -4,6 +4,8 @@ import { create } from 'zustand'
 import { themeChange } from 'theme-change'
 import { usePathname, useSearchParams } from 'next/navigation'
 import { Toaster } from 'react-hot-toast'
+import { registerLocale, setDefaultLocale } from 'react-datepicker'
+import datePickerLocaleEs from 'date-fns/locale/es'
 
 import getAvatarDataAction from '@/actions/getAvatarDataAction'
 import dispatchRefreshAvatarData from '@/utils-front/dispatchRefreshAvatarData'
@@ -32,6 +34,10 @@ function BaseComponent() {
   const resetAvatarData = useStore((state) => state.resetAvatarData)
 
   useEffect(() => {
+    // date picker global locale
+    registerLocale('es', datePickerLocaleEs)
+    setDefaultLocale('es')
+
     // apply saved ui theme on the first render
     themeChange(false)
   }, [])

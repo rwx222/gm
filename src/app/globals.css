@@ -16,3 +16,19 @@ html {
   z-index: -1000 !important;
   visibility: hidden !important;
 }
+
+/* react-datepicker custom styles */
+.react-datepicker-wrapper,
+.react-datepicker__input-container {
+  display: block !important;
+}
+.react-datepicker__current-month {
+  text-transform: capitalize;
+}
+.react-datepicker__day-name {
+  text-transform: capitalize;
+}
+.react-datepicker__time-container,
+.react-datepicker__time-box {
+  width: 76px !important;
+}

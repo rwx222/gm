@@ -99,3 +99,12 @@ export const ERROR_CODE_EMAIL_ALREADY_IN_USE = 'auth/email-already-in-use'
 export const ERROR_CODE_INVALID_CREDENTIAL = 'auth/invalid-credential'
 export const ERROR_CODE_POPUP_CLOSED = 'auth/popup-closed-by-user'
 export const ERROR_CODE_TOO_MANY_REQUESTS = 'auth/too-many-requests'
+
+// date picker
+export const DATEPICKER_DEFAULT_PROPS = {
+  showTimeSelect: true,
+  timeIntervals: 30,
+  timeCaption: 'Hora',
+  timeFormat: 'hh:mm aa',
+  dateFormat: 'dd/MMM/yyyy hh:mm aa',
+}
