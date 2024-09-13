@@ -1,4 +1,4 @@
-import admin from 'firebase-admin'
+import { FieldPath } from 'firebase-admin/firestore'
 import { isNonEmptyArray } from 'ramda-adjunct'
 
 import { db } from '@/data/firestore'
@@ -28,7 +28,7 @@ export default async function getUsers(uidsArr) {
     if (isNonEmptyArray(uidsArr)) {
       const usersQuerySnap = await db
         .collection('users')
-        .where(admin.firestore.FieldPath.documentId(), 'in', uidsArr)
+        .where(FieldPath.documentId(), 'in', uidsArr)
         .get()
       const usersData = usersQuerySnap.docs.map((doc) => {
         const userData = doc.data()

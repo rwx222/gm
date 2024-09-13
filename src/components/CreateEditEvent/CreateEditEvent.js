@@ -637,23 +637,6 @@ function BaseComponent({
             )}
           </div>
 
-          {isNonEmptyArray(availableUsers) && (
-            <div>
-              <div className='mb-3 px-4 py-2 rounded-lg bg-base-200 text-base font-normal italic'>
-                {`Puedes invitar usuarios al evento ahora, o puedes hacerlo después. También puedes promover un participante a juez o viceversa.`}
-              </div>
-
-              <div className='mb-5'>
-                <SearchUsersCombobox
-                  dataArr={searchableUsers}
-                  makeFilterFn={makeSearchUsersFilterFn}
-                  onSelectedUser={addInvitedUser}
-                  disabled={isLoading}
-                />
-              </div>
-            </div>
-          )}
-
           {(isNonEmptyArray(judgesUids) ||
             isNonEmptyArray(participantsUids)) && (
             <div className='mb-5'>
@@ -776,6 +759,23 @@ function BaseComponent({
               ) : (
                 <div className='text-center'>{`Sin participantes`}</div>
               )}
+            </div>
+          )}
+
+          {isNonEmptyArray(availableUsers) && (
+            <div>
+              <div className='mb-3 px-4 py-2 rounded-lg bg-base-200 text-base font-normal italic'>
+                {`Puedes invitar usuarios al evento ahora, o puedes hacerlo después. También puedes promover un participante a juez o viceversa.`}
+              </div>
+
+              <div className='mb-5'>
+                <SearchUsersCombobox
+                  dataArr={searchableUsers}
+                  makeFilterFn={makeSearchUsersFilterFn}
+                  onSelectedUser={addInvitedUser}
+                  disabled={isLoading}
+                />
+              </div>
             </div>
           )}
 

@@ -53,7 +53,7 @@ function BaseComponent() {
             })}
           >
             <CalendarRangeIcon width='20' height='20' />
-            {`Calendario`}
+            {`Mi Calendario`}
           </Link>
         )}
       </li>

@@ -7,6 +7,7 @@ export const IS_PRODUCTION = process.env.NODE_ENV === 'production'
 // event roles
 export const EVENT_ROLE_JUDGE = 'judge'
 export const EVENT_ROLE_PARTICIPANT = 'participant'
+export const EVENT_ROLE_OWNER = 'owner'
 export const EVENT_ROLE_ASSISTANT = 'assistant'
 
 // event user statuses

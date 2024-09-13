@@ -1,16 +1,18 @@
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { isNonEmptyArray } from 'ramda-adjunct'
+import { subHours } from 'date-fns'
 
+import CalendarPlusIcon from '@/icons/CalendarPlusIcon'
 import { PATH_AUTH, PATH_CREATE_EVENT, FN_PATH_EVENT_PAGE } from '@/constants'
 import getSessionUserUid from '@/data/getSessionUserUid'
-import getAllEvents from '@/data/getAllEvents'
-import CalendarPlusIcon from '@/icons/CalendarPlusIcon'
+import getUserEventsCalendar from '@/data/getUserEventsCalendar'
+import getAllEventTypes from '@/data/getAllEventTypes'
 
 export const dynamic = 'force-dynamic'
 
 export const metadata = {
-  title: 'Calendario',
+  title: 'Mi Calendario',
 }
 
 export default async function CreateEventPage() {
@@ -21,7 +23,14 @@ export default async function CreateEventPage() {
     redirect(PATH_AUTH)
   }
 
-  const eventsData = await getAllEvents()
+  const eventTypes = (await getAllEventTypes()) ?? []
+  const userEvents = (await getUserEventsCalendar(sessionUserUid)) ?? []
+
+  const minDateTime = subHours(new Date(), 25) // 25 hours ago
+  const recentEvents = userEvents.filter((event) => {
+    return new Date(event?.startDateIsoString) >= minDateTime
+  })
+  console.log(`🚀🚀🚀 -> userEvents:`, userEvents) // TODO: -> ltd
 
   return (
     <main className='px-5 pb-5 pt-1 xl:pt-5'>
@@ -36,9 +45,9 @@ export default async function CreateEventPage() {
       </div>
 
       <div className='py-5'>
-        {isNonEmptyArray(eventsData) ? (
+        {isNonEmptyArray(recentEvents) ? (
           <div>
-            {eventsData.map((event) => {
+            {recentEvents.map((event) => {
               return (
                 <div key={event.uid} className='pb-5'>
                   <Link

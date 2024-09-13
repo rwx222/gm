@@ -3,7 +3,11 @@ import Link from 'next/link'
 import { isNonEmptyString } from 'ramda-adjunct'
 
 import EventClientSection from '@/components/EventClientSection/EventClientSection'
-import { EVENT_ROLE_JUDGE, EVENT_ROLE_PARTICIPANT } from '@/constants'
+import {
+  EVENT_ROLE_JUDGE,
+  EVENT_ROLE_PARTICIPANT,
+  DATEPICKER_DEFAULT_PROPS,
+} from '@/constants'
 import { obfuscateDataToText } from '@/utils/obfuscation'
 import getAllEvents from '@/data/getAllEvents'
 import getAllEventTypes from '@/data/getAllEventTypes'
@@ -11,6 +15,7 @@ import getEvent from '@/data/getEvent'
 import getUser from '@/data/getUser'
 import getUsers from '@/data/getUsers'
 import getEventUsers from '@/data/getEventUsers'
+import dateFnsFormat from '@/utils/dateFnsFormat'
 
 export const dynamic = 'force-static'
 
@@ -95,9 +100,20 @@ export default async function EventPage({ params }) {
         </section>
       )}
 
+      {isNonEmptyString(eventData?.startDateIsoString) && (
+        <section className='pb-3'>
+          <div className='text-center text-secondary text-2xl font-semibold capitalize'>
+            {dateFnsFormat(
+              new Date(eventData?.startDateIsoString),
+              DATEPICKER_DEFAULT_PROPS.dateFormat
+            )}
+          </div>
+        </section>
+      )}
+
       {ownerData && (
-        <section className='pb-5'>
-          <div className='text-center text-accent text-base font-normal'>
+        <section className='pb-5 flex items-center justify-center'>
+          <div className='bg-base-300 rounded-md px-4 py-2 text-center text-base font-semibold text-accent'>
             {`Creado por:`}
 
             <div>

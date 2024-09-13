@@ -6,6 +6,8 @@ import { db } from '@/data/firestore'
  * @return {Promise<Array<{
  *   uid: string
  *   name: string
+ *   startDateIsoString: string
+ *   startDate: object
  *   eventType: string
  *   bannerUrl: string | null
  *   description: string | null
