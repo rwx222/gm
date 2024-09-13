@@ -502,7 +502,7 @@ function BaseComponent({
                         startDate,
                         DATEPICKER_DEFAULT_PROPS.dateFormat
                       )
-                    : '---'}
+                    : '--/--/---- --:-- --'}
                 </DatePickerCustomInputButton>
               }
             />
