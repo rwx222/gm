@@ -48,6 +48,12 @@ export default async function EditEventPage({ params }) {
     }
   }
 
+  if (eventData?.startDate) {
+    // startDate is a firebase Timestamp, it can't be sent to client components
+    // It's only used in the server for ordering purposes
+    eventData.startDate = null
+  }
+
   const eventJudgesUids = eventUsers
     .filter((eventUser) => eventUser.role === EVENT_ROLE_JUDGE)
     .map((eventUser) => eventUser.userUid)

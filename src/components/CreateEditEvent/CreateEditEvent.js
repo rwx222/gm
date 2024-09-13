@@ -29,6 +29,7 @@ import {
   updateDoc,
   collection,
   serverTimestamp,
+  Timestamp,
   writeBatch,
 } from 'firebase/firestore'
 import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage'
@@ -37,7 +38,7 @@ import Cropper from 'react-easy-crop'
 import ImageCompressor from 'js-image-compressor'
 import toast from 'react-hot-toast'
 import DatePicker from 'react-datepicker'
-import { subDays } from 'date-fns'
+import { isValid } from 'date-fns'
 
 import {
   FN_PATH_EVENT_PAGE,
@@ -49,6 +50,7 @@ import {
   FIELD_EVENT_NAME_MAX_LENGTH,
   FIELD_EVENT_DESCRIPTION_MAX_LENGTH,
   DATEPICKER_DEFAULT_PROPS,
+  EVENTS_MIN_DATE_ISO_STRING,
 } from '@/constants'
 import revalidatePathAction from '@/actions/revalidatePathAction'
 import getCustomTokenAction from '@/actions/getCustomTokenAction'
@@ -78,6 +80,7 @@ const schema = yup
       .required('Campo requerido')
       .min(FIELD_EVENT_NAME_MIN_LENGTH, 'Mínimo ${min} caracteres')
       .max(FIELD_EVENT_NAME_MAX_LENGTH, 'Máximo ${max} caracteres'),
+    startDate: yup.date().required('Campo requerido'),
     description: yup
       .string()
       .trim()
@@ -127,7 +130,6 @@ function BaseComponent({
   const [participantsUids, setParticipantsUids] = useState(
     isNonEmptyArray(eventParticipantsUids) ? eventParticipantsUids : []
   )
-  const [startDate, setStartDate] = useState(null)
 
   const router = useRouter()
   const eventUid = eventData?.uid
@@ -146,8 +148,12 @@ function BaseComponent({
       eventType: eventData?.eventType ?? '',
       bannerUrl: eventData?.bannerUrl ?? '',
       isPublished: eventData?.isPublished ?? true,
+      startDate: isNonEmptyString(eventData?.startDateIsoString)
+        ? new Date(eventData?.startDateIsoString)
+        : null,
     },
   })
+  const startDateFieldValue = watch('startDate')
   const bannerUrlFieldValue = watch('bannerUrl')
   const isPublishedFieldValue = watch('isPublished')
 
@@ -236,6 +242,14 @@ function BaseComponent({
       try {
         setIsLoading(true)
         let finalEventId = ''
+        const isValidStartDate =
+          Boolean(formData.startDate) && isValid(formData.startDate)
+        const startDate = isValidStartDate
+          ? Timestamp.fromDate(formData.startDate)
+          : null
+        const startDateIsoString = isValidStartDate
+          ? formData.startDate.toISOString()
+          : null
 
         if (eventUid) {
           finalEventId = eventUid
@@ -268,6 +282,8 @@ function BaseComponent({
           const eventDocRef = doc(dbRef.current, 'events', eventUid)
           const eventPayload = {
             name: normalizeSpaces(formData.name),
+            startDate,
+            startDateIsoString,
             description: normalizeSpaces(formData.description),
             eventType: formData.eventType,
             isPublished: formData.isPublished,
@@ -277,6 +293,8 @@ function BaseComponent({
         } else {
           const eventPayload = {
             name: normalizeSpaces(formData.name),
+            startDate,
+            startDateIsoString,
             description: normalizeSpaces(formData.description),
             eventType: formData.eventType,
             isPublished: formData.isPublished,
@@ -489,23 +507,34 @@ function BaseComponent({
             <FieldLabel>{`* Fecha y hora`}</FieldLabel>
             <DatePicker
               {...DATEPICKER_DEFAULT_PROPS}
-              minDate={subDays(new Date(), 1)}
+              minDate={new Date(EVENTS_MIN_DATE_ISO_STRING)}
               disabled={isLoading}
-              selected={startDate}
+              selected={startDateFieldValue}
               onChange={(date) => {
-                setStartDate(date)
+                setValue('startDate', date, { shouldValidate: true })
               }}
               customInput={
-                <DatePickerCustomInputButton className='btn btn-accent btn-outline btn-block text-lg capitalize'>
-                  {startDate
+                <DatePickerCustomInputButton
+                  className={classNames(
+                    'btn btn-outline btn-block text-lg capitalize',
+                    {
+                      'btn-accent': !errors?.startDate,
+                      'btn-error': errors?.startDate,
+                    }
+                  )}
+                >
+                  {startDateFieldValue
                     ? dateFnsFormat(
-                        startDate,
+                        startDateFieldValue,
                         DATEPICKER_DEFAULT_PROPS.dateFormat
                       )
                     : '--/--/---- --:-- --'}
                 </DatePickerCustomInputButton>
               }
             />
+            {errors?.startDate && (
+              <FieldErrorLabel>{errors?.startDate?.message}</FieldErrorLabel>
+            )}
           </div>
 
           <div className='mb-5'>

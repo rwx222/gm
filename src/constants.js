@@ -101,6 +101,7 @@ export const ERROR_CODE_POPUP_CLOSED = 'auth/popup-closed-by-user'
 export const ERROR_CODE_TOO_MANY_REQUESTS = 'auth/too-many-requests'
 
 // date picker
+export const EVENTS_MIN_DATE_ISO_STRING = '2024-09-10T05:00:00Z'
 export const DATEPICKER_DEFAULT_PROPS = {
   showTimeSelect: true,
   timeIntervals: 30,
