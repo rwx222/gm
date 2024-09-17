@@ -87,7 +87,7 @@ export default async function EventPage({ params }) {
           {eventData?.name}
         </h1>
 
-        <p className='text-center text-accent text-lg sm:text-2xl font-medium'>
+        <p className='text-center text-primary text-lg sm:text-2xl font-medium'>
           {eventType?.name ?? '---'}
         </p>
       </header>
