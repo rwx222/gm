@@ -102,7 +102,7 @@ export default async function EventPage({ params }) {
 
       {isNonEmptyString(eventData?.startDateIsoString) && (
         <section className='pb-3'>
-          <div className='text-center text-secondary text-2xl font-semibold capitalize'>
+          <div className='text-center text-secondary text-lg sm:text-2xl font-semibold capitalize'>
             {dateFnsFormat(
               new Date(eventData?.startDateIsoString),
               DATEPICKER_DEFAULT_PROPS.dateFormat
