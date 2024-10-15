@@ -105,7 +105,7 @@ const schemaUp = yup
       .max(FIELD_PASSWORD_MAX_LENGTH, 'Máximo ${max} caracteres')
       .matches(
         REGEX_USER_PASSWORD,
-        'Debe tener al menos una mayúscula, una minúscula y un número'
+        'Debe tener al menos una mayúscula, una minúscula y un número',
       ),
   })
   .required()
@@ -204,7 +204,7 @@ function BaseComponent() {
         // if user exists, update only some fields
         const fieldsToUpdate = pick(
           ['providerData', 'lastLogin', 'loginCount'],
-          userPayload
+          userPayload,
         )
         await setDoc(userDocRef, fieldsToUpdate, { merge: true })
       } else {
@@ -242,7 +242,7 @@ function BaseComponent() {
         setIsAuthenticating(false)
 
         throw new Error(
-          sessionData?.code || sessionData?.message || sessionRes.statusText
+          sessionData?.code || sessionData?.message || sessionRes.statusText,
         )
       }
 
@@ -252,7 +252,7 @@ function BaseComponent() {
 
       router.replace(PATH_HOME + '?tid=' + tid)
     },
-    [goToSignIn, resetSignIn, resetSignUp, router]
+    [goToSignIn, resetSignIn, resetSignUp, router],
   )
 
   const handleErrorMessage = useCallback(
@@ -285,24 +285,27 @@ function BaseComponent() {
         document.getElementById(MODAL_ID_UNKNOWN_ERROR).showModal()
       }
     },
-    [router]
+    [router],
   )
 
   const makeLoginWithProviderFn = useCallback(
     (provider) => async () => {
       try {
-        setIsAuthenticating(true)
+        // disabled temporarily
+        if (!provider) {
+          setIsAuthenticating(true)
 
-        await validateRecaptcha(RECAPTCHA_SOCIAL_SIGN_IN_ACTION)
+          await validateRecaptcha(RECAPTCHA_SOCIAL_SIGN_IN_ACTION)
 
-        sessionStorage.setItem(SS_KEY_SIGNING_IN, provider)
+          sessionStorage.setItem(SS_KEY_SIGNING_IN, provider)
 
-        await signInWithRedirect(
-          authRef.current,
-          provider === PROVIDER_ID_FACEBOOK
-            ? facebookProviderRef.current
-            : googleProviderRef.current
-        )
+          await signInWithRedirect(
+            authRef.current,
+            provider === PROVIDER_ID_FACEBOOK
+              ? facebookProviderRef.current
+              : googleProviderRef.current,
+          )
+        }
       } catch (error) {
         console.error(error)
         console.error(`💥> LWP '${error?.message}'`)
@@ -310,7 +313,7 @@ function BaseComponent() {
         setIsAuthenticating(false)
       }
     },
-    [handleErrorMessage]
+    [handleErrorMessage],
   )
 
   const onSubmitSignIn = useCallback(
@@ -323,7 +326,7 @@ function BaseComponent() {
         const result = await signInWithEmailAndPassword(
           authRef.current,
           formData.email,
-          formData.password
+          formData.password,
         )
         await performLogin(result)
       } catch (error) {
@@ -333,7 +336,7 @@ function BaseComponent() {
         handleErrorMessage(error)
       }
     },
-    [handleErrorMessage, performLogin]
+    [handleErrorMessage, performLogin],
   )
 
   const onSubmitSignUp = useCallback(
@@ -347,7 +350,7 @@ function BaseComponent() {
         const result = await createUserWithEmailAndPassword(
           authRef.current,
           formData.email,
-          formData.password
+          formData.password,
         )
         await performLogin(result, cleanedDisplayName)
       } catch (error) {
@@ -357,7 +360,7 @@ function BaseComponent() {
         handleErrorMessage(error)
       }
     },
-    [handleErrorMessage, performLogin]
+    [handleErrorMessage, performLogin],
   )
 
   useEffect(() => {
@@ -392,7 +395,7 @@ function BaseComponent() {
     <div className='pt-4 flex justify-center gap-5'>
       <ProviderButton
         onClick={makeLoginWithProviderFn(PROVIDER_ID_GOOGLE)}
-        disabled={isAuthenticating}
+        disabled={true}
       >
         <GoogleIcon />
         <span className='hidden xs:block xs:ml-2'>{`Google`}</span>
@@ -400,7 +403,7 @@ function BaseComponent() {
 
       <ProviderButton
         onClick={makeLoginWithProviderFn(PROVIDER_ID_FACEBOOK)}
-        disabled={isAuthenticating}
+        disabled={true}
       >
         <FacebookIcon />
         <span className='hidden xs:block xs:ml-2'>{`Facebook`}</span>
@@ -432,7 +435,7 @@ function BaseComponent() {
                   {
                     'input-primary': !errorsIn?.email,
                     'input-error': errorsIn?.email,
-                  }
+                  },
                 )}
               >
                 <EmailIcon className='text-primary' />
@@ -457,7 +460,7 @@ function BaseComponent() {
                   {
                     'input-primary': !errorsIn?.password,
                     'input-error': errorsIn?.password,
-                  }
+                  },
                 )}
               >
                 {showPasswd ? (
@@ -533,7 +536,7 @@ function BaseComponent() {
                   {
                     'input-secondary': !errorsUp?.name,
                     'input-error': errorsUp?.name,
-                  }
+                  },
                 )}
               >
                 <IdCardIcon className='text-secondary' />
@@ -557,7 +560,7 @@ function BaseComponent() {
                   {
                     'input-secondary': !errorsUp?.email,
                     'input-error': errorsUp?.email,
-                  }
+                  },
                 )}
               >
                 <EmailIcon className='text-secondary' />
@@ -581,7 +584,7 @@ function BaseComponent() {
                   {
                     'input-secondary': !errorsUp?.password,
                     'input-error': errorsUp?.password,
-                  }
+                  },
                 )}
               >
                 {showPasswd ? (
