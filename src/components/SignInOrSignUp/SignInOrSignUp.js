@@ -784,7 +784,7 @@ const ProviderButton = ({ children, ...props }) => {
     <button
       {...props}
       type='button'
-      className='flex flex-row items-center justify-center py-2 px-3 sm:px-5 sm:min-w-44 bg-white hover:bg-gray-200 text-gray-800 text-sm xs:text-base sm:text-lg shadow-md border border-gray-300 rounded-lg disabled:opacity-50 disabled:cursor-wait'
+      className='flex flex-row items-center justify-center py-2 px-3 sm:px-5 sm:min-w-44 bg-white hover:bg-gray-200 text-gray-800 text-sm xs:text-base sm:text-lg shadow-md border border-gray-300 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed'
     >
       {children}
     </button>

@@ -7,7 +7,7 @@ import { useStore } from '@/components/ClientTasks/ClientTasks'
 import { PATH_EDIT_PROFILE, SS_KEY_SAVED_USER_PROFILE } from '@/constants'
 
 function BaseComponent({ urlUsername }) {
-  const avatarData = useStore((state) => state.avatarData)
+  const avatarData = useStore((s) => s.avatarData)
 
   useEffect(() => {
     const savedUserFlag = sessionStorage.getItem(SS_KEY_SAVED_USER_PROFILE)

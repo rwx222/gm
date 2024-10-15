@@ -29,9 +29,9 @@ function BaseComponent() {
   const pathname = usePathname()
   const searchParams = useSearchParams()
 
-  const updateAvatarFetched = useStore((state) => state.updateAvatarFetched)
-  const updateAvatarData = useStore((state) => state.updateAvatarData)
-  const resetAvatarData = useStore((state) => state.resetAvatarData)
+  const updateAvatarFetched = useStore((s) => s.updateAvatarFetched)
+  const updateAvatarData = useStore((s) => s.updateAvatarData)
+  const resetAvatarData = useStore((s) => s.resetAvatarData)
 
   useEffect(() => {
     // date picker global locale

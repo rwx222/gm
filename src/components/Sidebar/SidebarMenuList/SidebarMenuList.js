@@ -18,7 +18,7 @@ function BaseComponent() {
     drawer.checked = !drawer.checked
   }, [])
 
-  const avatarData = useStore((state) => state.avatarData)
+  const avatarData = useStore((s) => s.avatarData)
   const userIsLoggedIn = Boolean(avatarData)
 
   return (

@@ -24,9 +24,9 @@ function BaseComponent() {
   const authRef = useRef(null)
   const router = useRouter()
 
-  const resetAvatarData = useStore((state) => state.resetAvatarData)
-  const avatarFetched = useStore((state) => state.avatarFetched)
-  const avatarData = useStore((state) => state.avatarData)
+  const resetAvatarData = useStore((s) => s.resetAvatarData)
+  const avatarFetched = useStore((s) => s.avatarFetched)
+  const avatarData = useStore((s) => s.avatarData)
 
   useEffect(() => {
     const app = initializeApp(firebaseConfig)

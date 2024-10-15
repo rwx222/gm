@@ -16,19 +16,19 @@ function BaseComponent({
   ojus,
   opus,
 }) {
-  const avatarData = useStore((state) => state.avatarData)
+  const avatarData = useStore((s) => s.avatarData)
   const sessionUserUid = avatarData?.uid
 
   const currentSessionUserIsOwner = Boolean(
-    sessionUserUid && sessionUserUid === ownerUid
+    sessionUserUid && sessionUserUid === ownerUid,
   )
 
   const currentSessionUserIsJudge = Boolean(
-    sessionUserUid && eventJudgesUids.includes(sessionUserUid)
+    sessionUserUid && eventJudgesUids.includes(sessionUserUid),
   )
 
   const currentSessionUserIsParticipant = Boolean(
-    sessionUserUid && eventParticipantsUids.includes(sessionUserUid)
+    sessionUserUid && eventParticipantsUids.includes(sessionUserUid),
   )
 
   const judgesUsers = useMemo(() => {
