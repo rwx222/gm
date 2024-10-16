@@ -1,5 +1,5 @@
 # Stage 1
-FROM node:20.16.0-alpine3.20 AS builder
+FROM node:20.18.0-alpine3.20 AS builder
 WORKDIR /app
 
 COPY package.json yarn.lock ./
@@ -12,7 +12,7 @@ RUN yarn build
 RUN yarn install --production
 
 # Stage 2
-FROM node:20.16.0-alpine3.20
+FROM node:20.18.0-alpine3.20
 WORKDIR /app
 
 COPY --from=builder /app/node_modules ./node_modules
